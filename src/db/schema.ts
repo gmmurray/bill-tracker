@@ -7,6 +7,8 @@ import {
   unique,
 } from 'drizzle-orm/sqlite-core';
 
+const isoNow = sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`;
+
 export const paySchedules = sqliteTable(
   'pay_schedules',
   {
@@ -15,6 +17,11 @@ export const paySchedules = sqliteTable(
     name: text('name').notNull(),
     anchorDay: integer('anchor_day').notNull(),
     isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+    createdAt: text('created_at').default(isoNow).notNull(),
+    updatedAt: text('updated_at')
+      .default(isoNow)
+      .$onUpdate(() => new Date().toISOString())
+      .notNull(),
   },
   table => [
     index('pay_schedules_user_id_idx').on(table.userId),
@@ -31,7 +38,9 @@ export const bills = sqliteTable(
   {
     id: text('id').primaryKey(),
     userId: text('user_id').notNull(),
-    payScheduleId: text('pay_schedule_id').references(() => paySchedules.id),
+    payScheduleId: text('pay_schedule_id').references(() => paySchedules.id, {
+      onDelete: 'set null',
+    }),
     name: text('name').notNull(),
     amountExpected: integer('amount_expected').notNull(),
     dueDayOfMonth: integer('due_day_of_month').notNull(),
@@ -41,6 +50,11 @@ export const bills = sqliteTable(
       .default(false),
     notes: text('notes'),
     isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+    createdAt: text('created_at').default(isoNow).notNull(),
+    updatedAt: text('updated_at')
+      .default(isoNow)
+      .$onUpdate(() => new Date().toISOString())
+      .notNull(),
   },
   table => [
     index('bills_user_id_idx').on(table.userId),
@@ -60,13 +74,16 @@ export const billInstances = sqliteTable(
     userId: text('user_id').notNull(),
     billId: text('bill_id')
       .notNull()
-      .references(() => bills.id),
+      .references(() => bills.id, { onDelete: 'cascade' }),
 
     dueDate: text('due_date').notNull(),
     amountActual: integer('amount_actual').notNull(),
-    paidAt: integer('paid_at', { mode: 'timestamp' })
-      .notNull()
-      .default(sql`(strftime('%s', 'now'))`),
+    paidAt: text('paid_at').notNull().default(isoNow),
+    createdAt: text('created_at').default(isoNow).notNull(),
+    updatedAt: text('updated_at')
+      .default(isoNow)
+      .$onUpdate(() => new Date().toISOString())
+      .notNull(),
   },
   table => [
     unique('bill_instances_bill_id_due_date_unique').on(

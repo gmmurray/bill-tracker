@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "fccd01a4-ca8d-4712-9c83-f43fb7ebc2e5",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "c9752a2d-8a4c-4628-9bbb-51ed0151c9c7",
+  "prevId": "396c5507-c8ac-4272-8502-088248f592f1",
   "tables": {
     "bill_instances": {
       "name": "bill_instances",
@@ -42,30 +42,45 @@
           "notNull": true,
           "autoincrement": false
         },
-        "status": {
-          "name": "status",
+        "paid_at": {
+          "name": "paid_at",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'PAID'"
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
         },
-        "paid_at": {
-          "name": "paid_at",
-          "type": "integer",
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false,
-          "default": "(strftime('%s', 'now'))"
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
         }
       },
       "indexes": {
-        "unique_bill_per_cycle": {
-          "name": "unique_bill_per_cycle",
-          "columns": [
-            "bill_id",
-            "due_date"
-          ],
+        "bill_instances_user_due_date_idx": {
+          "name": "bill_instances_user_due_date_idx",
+          "columns": ["user_id", "due_date"],
+          "isUnique": false
+        },
+        "bill_instances_user_bill_due_date_idx": {
+          "name": "bill_instances_user_bill_due_date_idx",
+          "columns": ["user_id", "bill_id", "due_date"],
+          "isUnique": false
+        },
+        "bill_instances_bill_id_due_date_unique": {
+          "name": "bill_instances_bill_id_due_date_unique",
+          "columns": ["bill_id", "due_date"],
           "isUnique": true
         }
       },
@@ -74,13 +89,9 @@
           "name": "bill_instances_bill_id_bills_id_fk",
           "tableFrom": "bill_instances",
           "tableTo": "bills",
-          "columnsFrom": [
-            "bill_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
+          "columnsFrom": ["bill_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -162,21 +173,49 @@
           "notNull": true,
           "autoincrement": false,
           "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "bills_user_id_idx": {
+          "name": "bills_user_id_idx",
+          "columns": ["user_id"],
+          "isUnique": false
+        },
+        "bills_user_active_due_day_idx": {
+          "name": "bills_user_active_due_day_idx",
+          "columns": ["user_id", "is_active", "due_day_of_month"],
+          "isUnique": false
+        },
+        "bills_pay_schedule_id_idx": {
+          "name": "bills_pay_schedule_id_idx",
+          "columns": ["pay_schedule_id"],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "bills_pay_schedule_id_pay_schedules_id_fk": {
           "name": "bills_pay_schedule_id_pay_schedules_id_fk",
           "tableFrom": "bills",
           "tableTo": "pay_schedules",
-          "columnsFrom": [
-            "pay_schedule_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
+          "columnsFrom": ["pay_schedule_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
@@ -222,9 +261,36 @@
           "notNull": true,
           "autoincrement": false,
           "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "pay_schedules_user_id_idx": {
+          "name": "pay_schedules_user_id_idx",
+          "columns": ["user_id"],
+          "isUnique": false
+        },
+        "pay_schedules_user_active_anchor_idx": {
+          "name": "pay_schedules_user_active_anchor_idx",
+          "columns": ["user_id", "is_active", "anchor_day"],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
