@@ -10,7 +10,7 @@
       "binding": "DB",
       "database_name": "bill-chill-db",
       "database_id": "f79f8ac1-0e27-4e0c-b333-1796613a5e63",
-      "migrations_dir": "migrations"
+      "migrations_dir": "drizzle"
     }
   ]
 }

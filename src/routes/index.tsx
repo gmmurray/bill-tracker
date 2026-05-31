@@ -2,7 +2,7 @@ import { env } from 'cloudflare:workers';
 
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getDb, getSchedules } from '#/lib/db';
+import { getSchedules } from '#/lib/db';
 
 const getData = createServerFn().handler(async () => {
   const data = await getSchedules();
