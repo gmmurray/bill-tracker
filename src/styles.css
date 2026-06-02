@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@theme {
+  /* --- BillChill Color Palette --- */
+
+  /* Base & Surfaces */
+  --color-chill-bg: #fcf6ec; /* Warm cream background */
+  --color-chill-surface: #ffffff; /* Clean white for cards */
+
+  /* Navigation & Highlights */
+  --color-chill-purple: #d7d0f6; /* Active dashboard button & table rows */
+  --color-chill-purple-light: #efeaff; /* Subtle checklist selections */
+
+  /* Critical Overdue Bills */
+  --color-chill-peach: #fbe5d4; /* Full-width emergency card background */
+  --color-chill-peach-border: #f3d2bb; /* Subtle borders for warning elements */
+
+  /* Chill Score & Good Standing */
+  --color-chill-teal: #71c9c1; /* Chill Score progress & slider thumb */
+  --color-chill-teal-light: #bfebe6; /* Slider track background */
+  --color-chill-mint: #d1ebe0; /* 'Pay' buttons and positive table rows */
+  --color-chill-mint-hover: #bee3d3; /* Hover state for pay buttons */
+
+  /* Typography */
+  --color-chill-text: #111827; /* Primary headers and active text */
+  --color-chill-text-muted: #6b7280; /* Secondary info, past dates, unchecked items */
+
+  /* Borders */
+  --color-chill-border: #e5e7eb; /* Card borders and dividers */
+}
