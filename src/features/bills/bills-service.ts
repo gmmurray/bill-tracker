@@ -2,7 +2,8 @@ import { createServerFn } from '@tanstack/react-start';
 import { and, asc, desc, eq, getTableColumns, isNull, sql } from 'drizzle-orm';
 import { type Database, getDb } from '#/db/client';
 import { billInstances, bills, paySchedules } from '#/db/schema';
-import { requireAuth } from '#/features/auth/auth-service';
+import { getAuthUserId, requireAuth } from '#/features/auth/auth-service';
+import { NotFoundError } from '#/lib/errors';
 import {
   type Bill,
   type BillInstance,
@@ -102,7 +103,7 @@ export const getBillDetail = createServerFn({ method: 'GET' })
     const db = getDb();
 
     const bill = await getBillById(db, userId, data.billId);
-    if (!bill) throw new Error('Bill not found');
+    if (!bill) throw new NotFoundError('Bill not found');
 
     const page = data.page ?? 1;
     const [{ instances, total }, scheduleRows] = await Promise.all([
@@ -157,7 +158,7 @@ export const getArchivedBillsCount = createServerFn({ method: 'GET' }).handler(
 export const createBill = createServerFn({ method: 'POST' })
   .inputValidator((data: Parameters<typeof createBillSchema.parse>[0]) => data)
   .handler(async ({ data }) => {
-    const { userId } = await requireAuth({ data: {} });
+    const userId = await getAuthUserId();
 
     const parsed = createBillSchema.parse(data);
     const db = getDb();
@@ -177,14 +178,14 @@ export const createBill = createServerFn({ method: 'POST' })
       })
       .returning();
 
-    if (!created) throw new Error('Failed to create bill');
+    if (!created) throw new Error('Failed to insert bill');
     return created;
   });
 
 export const updateBill = createServerFn({ method: 'POST' })
   .inputValidator((data: Parameters<typeof updateBillSchema.parse>[0]) => data)
   .handler(async ({ data }) => {
-    const { userId } = await requireAuth({ data: {} });
+    const userId = await getAuthUserId();
 
     const parsed = updateBillSchema.parse(data);
     const { id, ...updateFields } = parsed;
@@ -201,14 +202,14 @@ export const updateBill = createServerFn({ method: 'POST' })
       .where(and(eq(bills.id, id), eq(bills.userId, userId)))
       .returning();
 
-    if (!updated) throw new Error('Bill not found');
+    if (!updated) throw new NotFoundError('Bill not found');
     return updated;
   });
 
 export const archiveBill = createServerFn({ method: 'POST' })
   .inputValidator((data: { billId: string }) => data)
   .handler(async ({ data }) => {
-    const { userId } = await requireAuth({ data: {} });
+    const userId = await getAuthUserId();
 
     const db = getDb();
     await db
