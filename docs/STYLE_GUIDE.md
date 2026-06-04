@@ -19,6 +19,7 @@ All colors are defined as CSS custom properties in `src/styles.css` and availabl
 | `chill-text` | `#111827` | Primary text |
 | `chill-text-muted` | `#6b7280` | Secondary text, past dates, labels |
 | `chill-border` | `#e5e7eb` | Card borders, dividers |
+| `chill-ice` | `#7ec8e8` | "Chill." wordmark accent |
 
 ### Semantic Usage
 

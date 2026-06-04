@@ -11,7 +11,9 @@ function Home() {
   return (
     <div className="bg-chill-bg text-chill-text min-h-screen flex flex-col px-12 lg:px-24 xl:px-40">
       <nav className="flex items-center py-8">
-        <span className="font-semibold text-xl tracking-tight">bill chill</span>
+        <span className="font-semibold text-xl tracking-tight">
+          Bill<span className="text-chill-ice">Chill.</span>
+        </span>
         <Button asChild className="ml-auto">
           <Link to="/sign-in/$">Sign In</Link>
         </Button>

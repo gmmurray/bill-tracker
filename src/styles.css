@@ -27,4 +27,7 @@
 
   /* Borders */
   --color-chill-border: #e5e7eb; /* Card borders and dividers */
+
+  /* Wordmark accent */
+  --color-chill-ice: #7ec8e8; /* Icy light blue for "Chill." wordmark */
 }
