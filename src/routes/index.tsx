@@ -1,4 +1,3 @@
-import { Show, UserButton } from '@clerk/tanstack-react-start';
 import { createFileRoute, Link } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/')({
@@ -7,14 +6,124 @@ export const Route = createFileRoute('/')({
 
 function Home() {
   return (
-    <div className="p-8">
-      <h1 className="text-4xl font-bold">Welcome to TanStack Start</h1>
-      <p className="mt-4 text-lg">
-        Edit <code>src/routes/index.tsx</code> to get started.
-      </p>
-      <div>
-        <Link to="/sign-in/$">get started</Link>
+    <div className="bg-chill-bg text-chill-text min-h-screen flex flex-col px-12 lg:px-24 xl:px-40">
+      <nav className="flex items-center py-8">
+        <span className="font-semibold text-xl tracking-tight">bill chill</span>
+        <Link
+          to="/sign-in/$"
+          className="ml-auto text-sm font-medium border border-chill-border bg-chill-surface rounded-md px-4 py-2 hover:bg-chill-purple transition-colors"
+        >
+          Sign In
+        </Link>
+      </nav>
+
+      <div className="flex-1 flex flex-col lg:flex-row items-center gap-16 py-12 lg:py-0">
+        {/* Left: hero copy */}
+        <div className="flex-1 flex flex-col justify-center">
+          <h1 className="text-6xl xl:text-7xl 2xl:text-8xl font-bold leading-none tracking-tight">
+            Stop chasing
+            <br />
+            due dates.
+          </h1>
+          <p className="mt-5 text-xl xl:text-2xl text-chill-text-muted font-medium leading-snug">
+            Rule your bills by your own schedule.
+          </p>
+          <p className="mt-5 text-base text-chill-text-muted leading-relaxed max-w-sm">
+            Group your bills into custom pay schedules. Pay everything at once,
+            on your terms, and forget about money until the next cycle.
+          </p>
+          <Link
+            to="/sign-in/$"
+            className="mt-8 self-start bg-chill-teal text-chill-text font-medium px-7 py-3.5 rounded-md hover:opacity-90 transition-opacity text-sm"
+          >
+            Create your first schedule
+          </Link>
+        </div>
+
+        {/* Right: preview card */}
+        <div className="flex-1 flex items-center justify-center w-full">
+          <div className="bg-chill-surface border border-chill-border rounded-xl w-full max-w-md shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-chill-border">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-chill-text-muted">
+                  Your Active Pay Schedule
+                </p>
+                <p className="text-xs text-chill-text-muted mt-0.5">
+                  Anchored to the 1st
+                </p>
+              </div>
+              <span className="text-xs font-medium bg-chill-teal-light text-chill-text px-2.5 py-1 rounded-full">
+                3 of 4 paid
+              </span>
+            </div>
+
+            <BillRow label="Rent / Mortgage" amount="$1,200" state="paid" />
+            <BillRow label="Electric Utility" amount="$142" state="paid" />
+            <BillRow label="Car Insurance" amount="$89" state="missed" />
+            <BillRow label="Internet Subscription" amount="$65" state="upcoming" />
+
+            <div className="px-6 py-4 border-t border-chill-border bg-chill-bg">
+              <div className="flex items-center justify-between text-xs text-chill-text-muted">
+                <span>Total this cycle</span>
+                <span className="font-semibold text-chill-text">$1,496</span>
+              </div>
+              <div className="mt-2 h-1.5 rounded-full bg-chill-teal-light overflow-hidden">
+                <div className="h-full w-3/4 rounded-full bg-chill-teal" />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+  );
+}
+
+type BillRowState = 'paid' | 'missed' | 'upcoming';
+
+function BillRow({
+  label,
+  amount,
+  state,
+}: { label: string; amount: string; state: BillRowState }) {
+  const rowClass =
+    state === 'paid'
+      ? 'bg-chill-purple-light'
+      : state === 'missed'
+        ? 'bg-amber-50 border-l-2 border-l-amber-400'
+        : '';
+
+  const textClass =
+    state === 'upcoming' ? 'text-chill-text-muted' : 'text-chill-text';
+
+  return (
+    <div
+      className={`flex items-center gap-3 px-6 py-4 border-t border-chill-border ${rowClass}`}
+    >
+      {state === 'paid' ? <FilledCheck /> : <EmptyCheck />}
+      <span className={`flex-1 text-sm ${textClass}`}>{label}</span>
+      <span className={`text-sm font-medium ${textClass}`}>{amount}</span>
+    </div>
+  );
+}
+
+function FilledCheck() {
+  return (
+    <div className="w-4 h-4 rounded bg-chill-teal flex items-center justify-center shrink-0">
+      <svg width="10" height="8" viewBox="0 0 10 8" fill="none" aria-hidden="true">
+        <path
+          d="M1 4L3.5 6.5L9 1"
+          stroke="white"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
+  );
+}
+
+function EmptyCheck() {
+  return (
+    <div className="w-4 h-4 rounded border border-chill-border shrink-0" />
   );
 }
