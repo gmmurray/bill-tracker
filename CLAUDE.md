@@ -4,7 +4,7 @@
 
 **bill chill** is a personal bill-tracking app. The core idea: instead of a complex scheduled system, the database is a lean historical ledger and all bill state is derived on the fly from that ledger plus the bill blueprints.
 
-**Stack:** TanStack React Start (SSR), TanStack Router (file-based), TanStack Query, Clerk auth, Drizzle ORM, Cloudflare D1 (SQLite), Cloudflare Workers, Tailwind CSS v4, Biome, TypeScript strict.
+**Stack:** TanStack React Start (SSR), TanStack Router (file-based), TanStack Query, Clerk auth, Drizzle ORM, Cloudflare D1 (SQLite), Cloudflare Workers, Tailwind CSS v4, Radix UI, Biome, TypeScript strict.
 
 ---
 
@@ -139,3 +139,23 @@ A dedicated CRUD page — the source of truth view:
 - **Auth:** All authenticated routes live under `/_authenticated`. Server functions that touch user data must call `requireAuth()` and use the returned `userId` — never trust client-supplied user IDs
 - **DB access:** Use `getDb()` from `src/db/client.ts` inside server functions only
 - **Migrations:** After schema changes run `pnpm db:generate`, then `pnpm migrate:local` to apply locally
+
+### Component Structure
+
+- **`src/components/ui/`** — Radix UI primitives wrapped and styled with Tailwind. Reusable base components only (Button, Dialog, Checkbox, etc.)
+- **`src/components/`** — App-level shared components (layouts, nav, etc.)
+- **`src/features/`** — Feature modules. Each feature follows the pattern:
+  - `[feature]/[feature]-service.ts` — server functions
+  - `[feature]/[feature]-queries.ts` — TanStack Query hooks
+  - `[feature]/[feature]-model.ts` — types and domain models
+  - `[feature]/[feature]-helpers.ts` — pure utility functions (state derivation, date math, etc.)
+  - `[feature]/[feature]-constants.ts` — constants (add files only as needed)
+
+  The three feature modules are `auth/`, `bills/`, and `pay-schedules/`. Bill instance mutations (recording payments, nearest-unpaid-date logic) live under `bills/` — bill instances are not a standalone feature. Pay-schedule models can also live under `bills/` if the coupling warrants it.
+
+---
+
+## Reference Docs
+
+- **[docs/STYLE_GUIDE.md](docs/STYLE_GUIDE.md)** — color palette, component patterns, Tailwind conventions
+- **[docs/TODO.md](docs/TODO.md)** — outstanding tasks and boilerplate cleanup
