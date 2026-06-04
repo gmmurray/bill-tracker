@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UnauthenticatedRouteImport } from './routes/_unauthenticated'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedSchedulesRouteImport } from './routes/_authenticated/schedules'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedBillsRouteImport } from './routes/_authenticated/bills'
 import { Route as UnauthenticatedSignInSplatRouteImport } from './routes/_unauthenticated/sign-in.$'
@@ -28,6 +29,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedSchedulesRoute = AuthenticatedSchedulesRouteImport.update({
+  id: '/schedules',
+  path: '/schedules',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
@@ -50,12 +56,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/bills': typeof AuthenticatedBillsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/schedules': typeof AuthenticatedSchedulesRoute
   '/sign-in/$': typeof UnauthenticatedSignInSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/bills': typeof AuthenticatedBillsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/schedules': typeof AuthenticatedSchedulesRoute
   '/sign-in/$': typeof UnauthenticatedSignInSplatRoute
 }
 export interface FileRoutesById {
@@ -65,13 +73,14 @@ export interface FileRoutesById {
   '/_unauthenticated': typeof UnauthenticatedRouteWithChildren
   '/_authenticated/bills': typeof AuthenticatedBillsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/schedules': typeof AuthenticatedSchedulesRoute
   '/_unauthenticated/sign-in/$': typeof UnauthenticatedSignInSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/bills' | '/dashboard' | '/sign-in/$'
+  fullPaths: '/' | '/bills' | '/dashboard' | '/schedules' | '/sign-in/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/bills' | '/dashboard' | '/sign-in/$'
+  to: '/' | '/bills' | '/dashboard' | '/schedules' | '/sign-in/$'
   id:
     | '__root__'
     | '/'
@@ -79,6 +88,7 @@ export interface FileRouteTypes {
     | '/_unauthenticated'
     | '/_authenticated/bills'
     | '/_authenticated/dashboard'
+    | '/_authenticated/schedules'
     | '/_unauthenticated/sign-in/$'
   fileRoutesById: FileRoutesById
 }
@@ -111,6 +121,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/schedules': {
+      id: '/_authenticated/schedules'
+      path: '/schedules'
+      fullPath: '/schedules'
+      preLoaderRoute: typeof AuthenticatedSchedulesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -138,11 +155,13 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteChildren {
   AuthenticatedBillsRoute: typeof AuthenticatedBillsRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedSchedulesRoute: typeof AuthenticatedSchedulesRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBillsRoute: AuthenticatedBillsRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedSchedulesRoute: AuthenticatedSchedulesRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
