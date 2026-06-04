@@ -44,7 +44,7 @@ async function getBillInstancesByBillId(
       .limit(pageSize)
       .offset(offset),
     db
-      .select({ total: sql<number>`count(*)` })
+      .select({ total: sql<number>`cast(count(*) as integer)` })
       .from(billInstances)
       .where(eq(billInstances.billId, billId)),
   ]);
@@ -60,7 +60,6 @@ export const listBills = createServerFn({ method: 'GET' })
   )
   .handler(async ({ data }) => {
     const { userId } = await requireAuth({ data: {} });
-    if (!userId) throw new Error('Unauthorized');
 
     const db = getDb();
 
@@ -99,7 +98,6 @@ export const getBillDetail = createServerFn({ method: 'GET' })
   .inputValidator((data: { billId: string; page?: number }) => data)
   .handler(async ({ data }) => {
     const { userId } = await requireAuth({ data: {} });
-    if (!userId) throw new Error('Unauthorized');
 
     const db = getDb();
 
@@ -132,7 +130,6 @@ export const getBillDetail = createServerFn({ method: 'GET' })
 export const getArchivedBills = createServerFn({ method: 'GET' }).handler(
   async () => {
     const { userId } = await requireAuth({ data: {} });
-    if (!userId) throw new Error('Unauthorized');
 
     const db = getDb();
     return db
@@ -146,11 +143,10 @@ export const getArchivedBills = createServerFn({ method: 'GET' }).handler(
 export const getArchivedBillsCount = createServerFn({ method: 'GET' }).handler(
   async () => {
     const { userId } = await requireAuth({ data: {} });
-    if (!userId) throw new Error('Unauthorized');
 
     const db = getDb();
     const [result] = await db
-      .select({ count: sql<number>`count(*)` })
+      .select({ count: sql<number>`cast(count(*) as integer)` })
       .from(bills)
       .where(and(eq(bills.userId, userId), eq(bills.isActive, false)));
 
@@ -162,7 +158,6 @@ export const createBill = createServerFn({ method: 'POST' })
   .inputValidator((data: Parameters<typeof createBillSchema.parse>[0]) => data)
   .handler(async ({ data }) => {
     const { userId } = await requireAuth({ data: {} });
-    if (!userId) throw new Error('Unauthorized');
 
     const parsed = createBillSchema.parse(data);
     const db = getDb();
@@ -190,7 +185,6 @@ export const updateBill = createServerFn({ method: 'POST' })
   .inputValidator((data: Parameters<typeof updateBillSchema.parse>[0]) => data)
   .handler(async ({ data }) => {
     const { userId } = await requireAuth({ data: {} });
-    if (!userId) throw new Error('Unauthorized');
 
     const parsed = updateBillSchema.parse(data);
     const { id, ...updateFields } = parsed;
@@ -215,7 +209,6 @@ export const archiveBill = createServerFn({ method: 'POST' })
   .inputValidator((data: { billId: string }) => data)
   .handler(async ({ data }) => {
     const { userId } = await requireAuth({ data: {} });
-    if (!userId) throw new Error('Unauthorized');
 
     const db = getDb();
     await db

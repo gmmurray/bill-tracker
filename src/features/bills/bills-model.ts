@@ -18,7 +18,7 @@ export type BillDetail = BillWithSchedule & {
 };
 
 export type BillListFilters = {
-  scheduleId: string | 'unassigned' | 'all';
+  scheduleId: 'all' | 'unassigned' | (string & {});
   manualOnly: boolean;
 };
 

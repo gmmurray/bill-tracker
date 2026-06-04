@@ -65,7 +65,6 @@ export function useCreateBill() {
     mutationFn: (input: CreateBillInput) => createBill({ data: input }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: billKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: billKeys.archivedCount() });
     },
   });
 }
