@@ -48,3 +48,5 @@ export const updateBillSchema = createBillSchema.partial().extend({
 
 export type CreateBillInput = z.infer<typeof createBillSchema>;
 export type UpdateBillInput = z.infer<typeof updateBillSchema>;
+
+export type BillState = 'PAID' | 'OVERDUE' | 'MISSED_SCHEDULE' | 'UPCOMING';

@@ -74,7 +74,9 @@ export function useUpdateBill() {
   return useMutation({
     mutationFn: (input: UpdateBillInput) => updateBill({ data: input }),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: billKeys.detail(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: billKeys.detail(variables.id),
+      });
       queryClient.invalidateQueries({ queryKey: billKeys.lists() });
     },
   });
