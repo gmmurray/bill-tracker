@@ -6,6 +6,10 @@
 - [ ] **Home route** — `src/routes/index.tsx` is the TanStack Start template. Replace with redirect logic: authenticated → `/dashboard`, unauthenticated → `/sign-in/$`. Also remove the unused `Show` and `UserButton` imports.
 - [ ] **Auth layout styling** — `src/components/auth-layout.tsx` mixes Tailwind utility classes with raw `style` props. Standardize to Tailwind throughout.
 
+## UI / UX
+
+- [ ] Global navigation progress bar — fake indeterminate bar, 200ms delay before showing, tied to `useRouterState` pending status
+
 ## Features to Build
 
 - [ ] Server functions + React Query hooks for bill domain (pay schedules, bills, bill instances)
