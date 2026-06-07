@@ -1,10 +1,9 @@
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
-import { type billInstances, bills, type paySchedules } from '#/db/schema';
+import { type billInstances, bills } from '#/db/schema';
 
 export type Bill = typeof bills.$inferSelect;
 export type BillInstance = typeof billInstances.$inferSelect;
-export type PaySchedule = typeof paySchedules.$inferSelect;
 
 export type BillWithSchedule = Bill & {
   scheduleName: string | null;

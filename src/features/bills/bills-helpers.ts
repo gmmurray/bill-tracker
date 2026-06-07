@@ -2,8 +2,9 @@ import type {
   Bill,
   BillInstance,
   BillState,
-  PaySchedule,
 } from '#/features/bills/bills-model';
+
+import type { PaySchedule } from '#/features/pay-schedules/pay-schedules-model';
 
 export function clampDayToMonth(
   day: number,
