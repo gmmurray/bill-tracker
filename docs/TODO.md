@@ -15,7 +15,6 @@
 - [ ] Server functions + React Query hooks for bill domain (pay schedules, bills, bill instances)
   - **Bills** — list/detail/archived CRUD + query hooks done ([bills-service.ts](src/features/bills/bills-service.ts), [bills-queries.ts](src/features/bills/bills-queries.ts), [bills-model.ts](src/features/bills/bills-model.ts))
   - **Pay schedules** — full CRUD done ([pay-schedules-model.ts](src/features/pay-schedules/pay-schedules-model.ts), [pay-schedules-service.ts](src/features/pay-schedules/pay-schedules-service.ts), [pay-schedules-queries.ts](src/features/pay-schedules/pay-schedules-queries.ts))
-    - [ ] `getPayScheduleDetail` (or equivalent) if the schedules page needs single-record reads
   - [ ] **Bill instances** — nothing exists yet; instance reads are only bundled into `getBillDetail`. Still need (all under `features/bills/`):
     - [x] `bills-helpers.ts` with pure date math: `clampDayToMonth(day, year, month)` wrapping `Math.min(daysInMonth, day)`, and `computeNearestUnpaidDueDate(bill, existingInstances, today)` implementing the unbounded look-ahead from CLAUDE.md
     - [ ] `recordBillPayment` server function — accepts `{ billId, amountActual }`, derives `dueDate` via the helper above, inserts a `bill_instances` row, and surfaces the unique-constraint violation as a typed error

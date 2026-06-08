@@ -25,6 +25,27 @@ export const listPaySchedules = createServerFn({ method: 'GET' }).handler(
   },
 );
 
+export const getPayScheduleDetail = createServerFn({ method: 'GET' })
+  .inputValidator((data: { scheduleId: string }) => data)
+  .handler(async ({ data }) => {
+    const { userId } = await requireAuth({ data: {} });
+    const db = getDb();
+
+    const [schedule] = await db
+      .select()
+      .from(paySchedules)
+      .where(
+        and(
+          eq(paySchedules.id, data.scheduleId),
+          eq(paySchedules.userId, userId),
+          eq(paySchedules.isActive, true),
+        ),
+      );
+
+    if (!schedule) throw new NotFoundError('Pay schedule not found');
+    return schedule;
+  });
+
 export const createPaySchedule = createServerFn({ method: 'POST' })
   .inputValidator(
     (data: Parameters<typeof createPayScheduleSchema.parse>[0]) => data,

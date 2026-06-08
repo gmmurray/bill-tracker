@@ -7,6 +7,7 @@ import type {
 import {
   archivePaySchedule,
   createPaySchedule,
+  getPayScheduleDetail,
   listPaySchedules,
   updatePaySchedule,
 } from './pay-schedules-service';
@@ -14,6 +15,7 @@ import {
 export const payScheduleKeys = {
   all: ['paySchedules'] as const,
   lists: () => [...payScheduleKeys.all, 'list'] as const,
+  detail: (id: string) => [...payScheduleKeys.all, 'detail', id] as const,
 };
 
 export function usePaySchedules() {
@@ -21,6 +23,13 @@ export function usePaySchedules() {
     queryKey: payScheduleKeys.lists(),
     queryFn: () => listPaySchedules(),
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function usePayScheduleDetail(scheduleId: string) {
+  return useQuery({
+    queryKey: payScheduleKeys.detail(scheduleId),
+    queryFn: () => getPayScheduleDetail({ data: { scheduleId } }),
   });
 }
 
