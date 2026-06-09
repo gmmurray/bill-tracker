@@ -2,9 +2,7 @@
 
 ## Boilerplate Cleanup
 
-- [ ] **Page title** — `src/routes/__root.tsx:27` still reads `"TanStack Start Starter"`. Update to `"bill chill"`.
-- [ ] **Home route** — `src/routes/index.tsx` is the TanStack Start template. Replace with redirect logic: authenticated → `/dashboard`, unauthenticated → `/sign-in/$`. Also remove the unused `Show` and `UserButton` imports.
-- [ ] **Auth layout styling** — `src/components/auth-layout.tsx` mixes Tailwind utility classes with raw `style` props. Standardize to Tailwind throughout.
+- [x] **Page title** — `src/routes/__root.tsx:27` still reads `"TanStack Start Starter"`. Update to `"bill chill"`.
 
 ## UI / UX
 
@@ -12,7 +10,7 @@
 
 ## Features to Build
 
-- [ ] Server functions + React Query hooks for bill domain (pay schedules, bills, bill instances)
+- [x] Server functions + React Query hooks for bill domain (pay schedules, bills, bill instances)
   - **Bills** — list/detail/archived CRUD + query hooks done ([bills-service.ts](src/features/bills/bills-service.ts), [bills-queries.ts](src/features/bills/bills-queries.ts), [bills-model.ts](src/features/bills/bills-model.ts))
   - **Pay schedules** — full CRUD done ([pay-schedules-model.ts](src/features/pay-schedules/pay-schedules-model.ts), [pay-schedules-service.ts](src/features/pay-schedules/pay-schedules-service.ts), [pay-schedules-queries.ts](src/features/pay-schedules/pay-schedules-queries.ts))
   - **Bill instances** — full implementation done ([bills-service.ts](src/features/bills/bills-service.ts), [bills-queries.ts](src/features/bills/bills-queries.ts))
