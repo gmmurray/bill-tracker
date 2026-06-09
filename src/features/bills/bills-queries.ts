@@ -8,11 +8,15 @@ import type {
 import {
   archiveBill,
   createBill,
+  deleteBillInstance,
   getArchivedBills,
   getArchivedBillsCount,
   getBillDetail,
   listBills,
+  listCurrentMonthInstances,
+  recordBillPayment,
   updateBill,
+  updateBillInstance,
 } from './bills-service';
 
 export const billKeys = {
@@ -23,6 +27,8 @@ export const billKeys = {
   detail: (id: string) => [...billKeys.details(), id] as const,
   archived: () => [...billKeys.all, 'archived'] as const,
   archivedCount: () => [...billKeys.all, 'archivedCount'] as const,
+  currentMonthInstances: () =>
+    [...billKeys.all, 'currentMonthInstances'] as const,
 };
 
 export function useBills(filters: BillListFilters) {
@@ -107,6 +113,71 @@ export function useArchiveBill() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: billKeys.lists() });
       queryClient.invalidateQueries({ queryKey: billKeys.archivedCount() });
+    },
+  });
+}
+
+export function useCurrentMonthInstances() {
+  return useQuery({
+    queryKey: billKeys.currentMonthInstances(),
+    queryFn: () => listCurrentMonthInstances(),
+  });
+}
+
+export function useRecordBillPayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { billId: string; amountActual: number }) =>
+      recordBillPayment({ data: input }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: billKeys.lists() });
+      queryClient.invalidateQueries({
+        queryKey: billKeys.detail(variables.billId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: billKeys.currentMonthInstances(),
+      });
+    },
+  });
+}
+
+export function useUpdateBillInstance() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      instanceId: string;
+      amountActual: number;
+      billId: string;
+    }) =>
+      updateBillInstance({
+        data: {
+          instanceId: input.instanceId,
+          amountActual: input.amountActual,
+        },
+      }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: billKeys.detail(variables.billId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: billKeys.currentMonthInstances(),
+      });
+    },
+  });
+}
+
+export function useDeleteBillInstance() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { instanceId: string; billId: string }) =>
+      deleteBillInstance({ data: { instanceId: input.instanceId } }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: billKeys.detail(variables.billId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: billKeys.currentMonthInstances(),
+      });
     },
   });
 }

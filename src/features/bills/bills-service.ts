@@ -1,9 +1,19 @@
 import { createServerFn } from '@tanstack/react-start';
-import { and, asc, desc, eq, getTableColumns, isNull, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  getTableColumns,
+  isNull,
+  like,
+  sql,
+} from 'drizzle-orm';
 import { type Database, getDb } from '#/db/client';
 import { billInstances, bills, paySchedules } from '#/db/schema';
 import { getAuthUserId, requireAuth } from '#/features/auth/auth-service';
-import { NotFoundError } from '#/lib/errors';
+import { ConflictError, NotFoundError } from '#/lib/errors';
+import { computeNearestUnpaidDueDate } from './bills-helpers';
 import {
   type Bill,
   type BillInstance,
@@ -216,4 +226,106 @@ export const archiveBill = createServerFn({ method: 'POST' })
       .update(bills)
       .set({ isActive: false })
       .where(and(eq(bills.id, data.billId), eq(bills.userId, userId)));
+  });
+
+export const listCurrentMonthInstances = createServerFn({
+  method: 'GET',
+}).handler(async () => {
+  const { userId } = await requireAuth({ data: {} });
+  const db = getDb();
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const monthPrefix = `${year}-${month}-%`;
+
+  return db
+    .select(getTableColumns(billInstances))
+    .from(billInstances)
+    .innerJoin(bills, eq(billInstances.billId, bills.id))
+    .where(
+      and(eq(bills.userId, userId), like(billInstances.dueDate, monthPrefix)),
+    );
+});
+
+export const recordBillPayment = createServerFn({ method: 'POST' })
+  .inputValidator((data: { billId: string; amountActual: number }) => data)
+  .handler(async ({ data }) => {
+    const { userId } = await requireAuth({ data: {} });
+    const db = getDb();
+
+    const bill = await getBillById(db, userId, data.billId);
+    if (!bill) throw new NotFoundError('Bill not found');
+
+    const existingInstances = await db
+      .select()
+      .from(billInstances)
+      .where(eq(billInstances.billId, data.billId));
+
+    const dueDate = computeNearestUnpaidDueDate(
+      bill.dueDayOfMonth,
+      existingInstances,
+      new Date(),
+    );
+
+    try {
+      const [created] = await db
+        .insert(billInstances)
+        .values({
+          id: crypto.randomUUID(),
+          userId,
+          billId: data.billId,
+          dueDate,
+          amountActual: data.amountActual,
+          paidAt: new Date().toISOString(),
+        })
+        .returning();
+
+      if (!created) throw new Error('Failed to insert bill instance');
+      return created;
+    } catch (err) {
+      if (err instanceof Error && /unique/i.test(err.message)) {
+        throw new ConflictError(
+          'A payment for this billing cycle already exists',
+        );
+      }
+      throw err;
+    }
+  });
+
+export const updateBillInstance = createServerFn({ method: 'POST' })
+  .inputValidator((data: { instanceId: string; amountActual: number }) => data)
+  .handler(async ({ data }) => {
+    const { userId } = await requireAuth({ data: {} });
+    const db = getDb();
+
+    const [updated] = await db
+      .update(billInstances)
+      .set({ amountActual: data.amountActual })
+      .where(
+        and(
+          eq(billInstances.id, data.instanceId),
+          eq(billInstances.userId, userId),
+        ),
+      )
+      .returning();
+
+    if (!updated) throw new NotFoundError('Bill instance not found');
+    return updated;
+  });
+
+export const deleteBillInstance = createServerFn({ method: 'POST' })
+  .inputValidator((data: { instanceId: string }) => data)
+  .handler(async ({ data }) => {
+    const { userId } = await requireAuth({ data: {} });
+    const db = getDb();
+
+    await db
+      .delete(billInstances)
+      .where(
+        and(
+          eq(billInstances.id, data.instanceId),
+          eq(billInstances.userId, userId),
+        ),
+      );
   });
