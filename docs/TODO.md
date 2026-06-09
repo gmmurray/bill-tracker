@@ -18,5 +18,9 @@
     - [x] `recordBillPayment`, `updateBillInstance`, `deleteBillInstance`, `listCurrentMonthInstances` server functions
     - [x] `useRecordBillPayment`, `useUpdateBillInstance`, `useDeleteBillInstance`, `useCurrentMonthInstances` hooks
   - [x] **State derivation** — `deriveBillState(bill, instances, today)` in `bills-helpers.ts` returning the `PAID | OVERDUE | MISSED_SCHEDULE | UPCOMING` union from CLAUDE.md (frontend-only, O(1) Map lookup keyed on `billId`)
+- [ ] **Responsive drawer/sheet component** — desktop side drawer, mobile full-screen sheet; shared primitive used by add bill, log historical payment, and edit amount flows
+- [ ] **Bill management page** — see [docs/pages/bill-management.md](docs/pages/bill-management.md)
+  - [ ] `logHistoricalPayment` server function + `useLogHistoricalPayment` hook (backend gap, required before bill detail)
+- [ ] **Bill detail page** — see [docs/pages/bill-detail.md](docs/pages/bill-detail.md)
+- [ ] **Bills archive page** — see [docs/pages/bills-archive.md](docs/pages/bills-archive.md)
 - [ ] Dashboard page (JIT state derivation, 3-row hierarchy)
-- [ ] Bills management page (full CRUD, 1–31 chronological view)
