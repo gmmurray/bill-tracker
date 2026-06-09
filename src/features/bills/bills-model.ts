@@ -49,3 +49,16 @@ export type CreateBillInput = z.infer<typeof createBillSchema>;
 export type UpdateBillInput = z.infer<typeof updateBillSchema>;
 
 export type BillState = 'PAID' | 'OVERDUE' | 'MISSED_SCHEDULE' | 'UPCOMING';
+
+export const logHistoricalPaymentSchema = z.object({
+  billId: z.string().uuid(),
+  dueDate: z.iso.date().refine(val => new Date(val) <= new Date(), {
+    message: 'dueDate must be on or before today',
+  }),
+  amountActual: z.number().int().positive(),
+  paidAt: z.iso.datetime(),
+});
+
+export type LogHistoricalPaymentInput = z.infer<
+  typeof logHistoricalPaymentSchema
+>;

@@ -1,19 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
+  Bill,
   BillListFilters,
   BillWithSchedule,
   CreateBillInput,
+  LogHistoricalPaymentInput,
   UpdateBillInput,
 } from './bills-model';
 import {
   archiveBill,
   createBill,
+  deleteBill,
   deleteBillInstance,
   getArchivedBills,
   getArchivedBillsCount,
   getBillDetail,
   listBills,
   listCurrentMonthInstances,
+  logHistoricalPayment,
   recordBillPayment,
   updateBill,
   updateBillInstance,
@@ -175,6 +179,56 @@ export function useDeleteBillInstance() {
       queryClient.invalidateQueries({
         queryKey: billKeys.detail(variables.billId),
       });
+      queryClient.invalidateQueries({
+        queryKey: billKeys.currentMonthInstances(),
+      });
+    },
+  });
+}
+
+export function useLogHistoricalPayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: LogHistoricalPaymentInput) =>
+      logHistoricalPayment({ data: input }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: billKeys.lists() });
+      queryClient.invalidateQueries({
+        queryKey: billKeys.detail(variables.billId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: billKeys.currentMonthInstances(),
+      });
+    },
+  });
+}
+
+export function useDeleteBill() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (billId: string) => deleteBill({ data: { billId } }),
+    onMutate: async billId => {
+      await queryClient.cancelQueries({ queryKey: billKeys.archived() });
+      const snapshot = queryClient.getQueriesData<Bill[]>({
+        queryKey: billKeys.archived(),
+      });
+      queryClient.setQueriesData<Bill[]>(
+        { queryKey: billKeys.archived() },
+        old => old?.filter(b => b.id !== billId),
+      );
+      return { snapshot };
+    },
+    onError: (_err, _billId, context) => {
+      if (context) {
+        for (const [key, data] of context.snapshot) {
+          queryClient.setQueryData(key, data);
+        }
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: billKeys.archived() });
+      queryClient.invalidateQueries({ queryKey: billKeys.archivedCount() });
+      queryClient.invalidateQueries({ queryKey: billKeys.lists() });
       queryClient.invalidateQueries({
         queryKey: billKeys.currentMonthInstances(),
       });

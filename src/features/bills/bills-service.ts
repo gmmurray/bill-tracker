@@ -18,6 +18,7 @@ import {
   type Bill,
   type BillInstance,
   createBillSchema,
+  logHistoricalPaymentSchema,
   updateBillSchema,
 } from './bills-model';
 
@@ -328,4 +329,53 @@ export const deleteBillInstance = createServerFn({ method: 'POST' })
           eq(billInstances.userId, userId),
         ),
       );
+  });
+
+export const logHistoricalPayment = createServerFn({ method: 'POST' })
+  .inputValidator(
+    (data: Parameters<typeof logHistoricalPaymentSchema.parse>[0]) => data,
+  )
+  .handler(async ({ data }) => {
+    const { userId } = await requireAuth({ data: {} });
+
+    const parsed = logHistoricalPaymentSchema.parse(data);
+    const db = getDb();
+
+    const bill = await getBillById(db, userId, parsed.billId);
+    if (!bill) throw new NotFoundError('Bill not found');
+
+    try {
+      const [created] = await db
+        .insert(billInstances)
+        .values({
+          id: crypto.randomUUID(),
+          userId,
+          billId: parsed.billId,
+          dueDate: parsed.dueDate,
+          amountActual: parsed.amountActual,
+          paidAt: parsed.paidAt,
+        })
+        .returning();
+
+      if (!created) throw new Error('Failed to insert bill instance');
+      return created;
+    } catch (err) {
+      if (err instanceof Error && /unique/i.test(err.message)) {
+        throw new ConflictError(
+          'A payment for this billing cycle already exists',
+        );
+      }
+      throw err;
+    }
+  });
+
+export const deleteBill = createServerFn({ method: 'POST' })
+  .inputValidator((data: { billId: string }) => data)
+  .handler(async ({ data }) => {
+    const userId = await getAuthUserId();
+    const db = getDb();
+
+    await db
+      .delete(bills)
+      .where(and(eq(bills.id, data.billId), eq(bills.userId, userId)));
   });
