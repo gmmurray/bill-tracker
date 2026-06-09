@@ -14,8 +14,10 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSchedulesRouteImport } from './routes/_authenticated/schedules'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedBillsRouteImport } from './routes/_authenticated/bills'
+import { Route as AuthenticatedBillsIndexRouteImport } from './routes/_authenticated/bills/index'
 import { Route as UnauthenticatedSignInSplatRouteImport } from './routes/_unauthenticated/sign-in.$'
+import { Route as AuthenticatedBillsArchivedRouteImport } from './routes/_authenticated/bills/archived'
+import { Route as AuthenticatedBillsBillIdRouteImport } from './routes/_authenticated/bills/$billId'
 
 const UnauthenticatedRoute = UnauthenticatedRouteImport.update({
   id: '/_unauthenticated',
@@ -40,9 +42,9 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedBillsRoute = AuthenticatedBillsRouteImport.update({
-  id: '/bills',
-  path: '/bills',
+const AuthenticatedBillsIndexRoute = AuthenticatedBillsIndexRouteImport.update({
+  id: '/bills/',
+  path: '/bills/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const UnauthenticatedSignInSplatRoute =
@@ -51,45 +53,79 @@ const UnauthenticatedSignInSplatRoute =
     path: '/sign-in/$',
     getParentRoute: () => UnauthenticatedRoute,
   } as any)
+const AuthenticatedBillsArchivedRoute =
+  AuthenticatedBillsArchivedRouteImport.update({
+    id: '/bills/archived',
+    path: '/bills/archived',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedBillsBillIdRoute =
+  AuthenticatedBillsBillIdRouteImport.update({
+    id: '/bills/$billId',
+    path: '/bills/$billId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/bills': typeof AuthenticatedBillsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/schedules': typeof AuthenticatedSchedulesRoute
+  '/bills/$billId': typeof AuthenticatedBillsBillIdRoute
+  '/bills/archived': typeof AuthenticatedBillsArchivedRoute
   '/sign-in/$': typeof UnauthenticatedSignInSplatRoute
+  '/bills/': typeof AuthenticatedBillsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/bills': typeof AuthenticatedBillsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/schedules': typeof AuthenticatedSchedulesRoute
+  '/bills/$billId': typeof AuthenticatedBillsBillIdRoute
+  '/bills/archived': typeof AuthenticatedBillsArchivedRoute
   '/sign-in/$': typeof UnauthenticatedSignInSplatRoute
+  '/bills': typeof AuthenticatedBillsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/_unauthenticated': typeof UnauthenticatedRouteWithChildren
-  '/_authenticated/bills': typeof AuthenticatedBillsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/schedules': typeof AuthenticatedSchedulesRoute
+  '/_authenticated/bills/$billId': typeof AuthenticatedBillsBillIdRoute
+  '/_authenticated/bills/archived': typeof AuthenticatedBillsArchivedRoute
   '/_unauthenticated/sign-in/$': typeof UnauthenticatedSignInSplatRoute
+  '/_authenticated/bills/': typeof AuthenticatedBillsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/bills' | '/dashboard' | '/schedules' | '/sign-in/$'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/schedules'
+    | '/bills/$billId'
+    | '/bills/archived'
+    | '/sign-in/$'
+    | '/bills/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/bills' | '/dashboard' | '/schedules' | '/sign-in/$'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/schedules'
+    | '/bills/$billId'
+    | '/bills/archived'
+    | '/sign-in/$'
+    | '/bills'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/_unauthenticated'
-    | '/_authenticated/bills'
     | '/_authenticated/dashboard'
     | '/_authenticated/schedules'
+    | '/_authenticated/bills/$billId'
+    | '/_authenticated/bills/archived'
     | '/_unauthenticated/sign-in/$'
+    | '/_authenticated/bills/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -135,11 +171,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/bills': {
-      id: '/_authenticated/bills'
+    '/_authenticated/bills/': {
+      id: '/_authenticated/bills/'
       path: '/bills'
-      fullPath: '/bills'
-      preLoaderRoute: typeof AuthenticatedBillsRouteImport
+      fullPath: '/bills/'
+      preLoaderRoute: typeof AuthenticatedBillsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_unauthenticated/sign-in/$': {
@@ -149,19 +185,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UnauthenticatedSignInSplatRouteImport
       parentRoute: typeof UnauthenticatedRoute
     }
+    '/_authenticated/bills/archived': {
+      id: '/_authenticated/bills/archived'
+      path: '/bills/archived'
+      fullPath: '/bills/archived'
+      preLoaderRoute: typeof AuthenticatedBillsArchivedRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/bills/$billId': {
+      id: '/_authenticated/bills/$billId'
+      path: '/bills/$billId'
+      fullPath: '/bills/$billId'
+      preLoaderRoute: typeof AuthenticatedBillsBillIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedBillsRoute: typeof AuthenticatedBillsRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedSchedulesRoute: typeof AuthenticatedSchedulesRoute
+  AuthenticatedBillsBillIdRoute: typeof AuthenticatedBillsBillIdRoute
+  AuthenticatedBillsArchivedRoute: typeof AuthenticatedBillsArchivedRoute
+  AuthenticatedBillsIndexRoute: typeof AuthenticatedBillsIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedBillsRoute: AuthenticatedBillsRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedSchedulesRoute: AuthenticatedSchedulesRoute,
+  AuthenticatedBillsBillIdRoute: AuthenticatedBillsBillIdRoute,
+  AuthenticatedBillsArchivedRoute: AuthenticatedBillsArchivedRoute,
+  AuthenticatedBillsIndexRoute: AuthenticatedBillsIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
