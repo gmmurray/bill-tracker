@@ -232,7 +232,7 @@ function BillTableRow({
         {formatCurrency(bill.amountExpected)}
       </td>
       <td className="px-4 py-3 text-center">
-        {bill.isAutoPay && (
+        {bill.isAutoPay ? (
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="16"
@@ -248,6 +248,10 @@ function BillTableRow({
           >
             <path d="M20 6 9 17l-5-5" />
           </svg>
+        ) : (
+          <span className="text-chill-text-muted" aria-hidden="true">
+            —
+          </span>
         )}
       </td>
       <td className="px-4 py-3 text-right">
@@ -258,6 +262,7 @@ function BillTableRow({
               size="sm"
               onClick={e => e.stopPropagation()}
               aria-label={`Archive ${bill.name}`}
+              className="text-red-600 hover:bg-red-50 hover:text-red-700"
             >
               Archive
             </Button>
