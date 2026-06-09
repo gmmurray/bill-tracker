@@ -17,8 +17,14 @@ import { computeNearestUnpaidDueDate } from './bills-helpers';
 import {
   type Bill,
   type BillInstance,
+  billIdSchema,
   createBillSchema,
+  getBillDetailSchema,
+  instanceIdSchema,
+  listBillsSchema,
   logHistoricalPaymentSchema,
+  recordBillPaymentSchema,
+  updateBillInstanceSchema,
   updateBillSchema,
 } from './bills-model';
 
@@ -64,12 +70,7 @@ async function getBillInstancesByBillId(
 }
 
 export const listBills = createServerFn({ method: 'GET' })
-  .inputValidator(
-    (data: {
-      scheduleId?: string | 'unassigned' | 'all';
-      manualOnly?: boolean;
-    }) => data,
-  )
+  .validator(listBillsSchema)
   .handler(async ({ data }) => {
     const { userId } = await requireAuth({ data: {} });
 
@@ -107,7 +108,7 @@ export const listBills = createServerFn({ method: 'GET' })
   });
 
 export const getBillDetail = createServerFn({ method: 'GET' })
-  .inputValidator((data: { billId: string; page?: number }) => data)
+  .validator(getBillDetailSchema)
   .handler(async ({ data }) => {
     const { userId } = await requireAuth({ data: {} });
 
@@ -167,11 +168,10 @@ export const getArchivedBillsCount = createServerFn({ method: 'GET' }).handler(
 );
 
 export const createBill = createServerFn({ method: 'POST' })
-  .inputValidator((data: Parameters<typeof createBillSchema.parse>[0]) => data)
+  .validator(createBillSchema)
   .handler(async ({ data }) => {
     const userId = await getAuthUserId();
 
-    const parsed = createBillSchema.parse(data);
     const db = getDb();
 
     const [created] = await db
@@ -179,13 +179,13 @@ export const createBill = createServerFn({ method: 'POST' })
       .values({
         id: crypto.randomUUID(),
         userId,
-        name: parsed.name,
-        amountExpected: parsed.amountExpected,
-        dueDayOfMonth: parsed.dueDayOfMonth,
-        payScheduleId: parsed.payScheduleId ?? null,
-        paymentUrl: parsed.paymentUrl ?? null,
-        isAutoPay: parsed.isAutoPay ?? false,
-        notes: parsed.notes ?? null,
+        name: data.name,
+        amountExpected: data.amountExpected,
+        dueDayOfMonth: data.dueDayOfMonth,
+        payScheduleId: data.payScheduleId ?? null,
+        paymentUrl: data.paymentUrl ?? null,
+        isAutoPay: data.isAutoPay ?? false,
+        notes: data.notes ?? null,
       })
       .returning();
 
@@ -194,12 +194,11 @@ export const createBill = createServerFn({ method: 'POST' })
   });
 
 export const updateBill = createServerFn({ method: 'POST' })
-  .inputValidator((data: Parameters<typeof updateBillSchema.parse>[0]) => data)
+  .validator(updateBillSchema)
   .handler(async ({ data }) => {
     const userId = await getAuthUserId();
 
-    const parsed = updateBillSchema.parse(data);
-    const { id, ...updateFields } = parsed;
+    const { id, ...updateFields } = data;
 
     const setValues = Object.fromEntries(
       Object.entries(updateFields).filter(([, v]) => v !== undefined),
@@ -218,7 +217,7 @@ export const updateBill = createServerFn({ method: 'POST' })
   });
 
 export const archiveBill = createServerFn({ method: 'POST' })
-  .inputValidator((data: { billId: string }) => data)
+  .validator(billIdSchema)
   .handler(async ({ data }) => {
     const userId = await getAuthUserId();
 
@@ -250,7 +249,7 @@ export const listCurrentMonthInstances = createServerFn({
 });
 
 export const recordBillPayment = createServerFn({ method: 'POST' })
-  .inputValidator((data: { billId: string; amountActual: number }) => data)
+  .validator(recordBillPaymentSchema)
   .handler(async ({ data }) => {
     const { userId } = await requireAuth({ data: {} });
     const db = getDb();
@@ -295,7 +294,7 @@ export const recordBillPayment = createServerFn({ method: 'POST' })
   });
 
 export const updateBillInstance = createServerFn({ method: 'POST' })
-  .inputValidator((data: { instanceId: string; amountActual: number }) => data)
+  .validator(updateBillInstanceSchema)
   .handler(async ({ data }) => {
     const { userId } = await requireAuth({ data: {} });
     const db = getDb();
@@ -316,7 +315,7 @@ export const updateBillInstance = createServerFn({ method: 'POST' })
   });
 
 export const deleteBillInstance = createServerFn({ method: 'POST' })
-  .inputValidator((data: { instanceId: string }) => data)
+  .validator(instanceIdSchema)
   .handler(async ({ data }) => {
     const { userId } = await requireAuth({ data: {} });
     const db = getDb();
@@ -332,16 +331,13 @@ export const deleteBillInstance = createServerFn({ method: 'POST' })
   });
 
 export const logHistoricalPayment = createServerFn({ method: 'POST' })
-  .inputValidator(
-    (data: Parameters<typeof logHistoricalPaymentSchema.parse>[0]) => data,
-  )
+  .validator(logHistoricalPaymentSchema)
   .handler(async ({ data }) => {
     const { userId } = await requireAuth({ data: {} });
 
-    const parsed = logHistoricalPaymentSchema.parse(data);
     const db = getDb();
 
-    const bill = await getBillById(db, userId, parsed.billId);
+    const bill = await getBillById(db, userId, data.billId);
     if (!bill) throw new NotFoundError('Bill not found');
 
     try {
@@ -350,10 +346,10 @@ export const logHistoricalPayment = createServerFn({ method: 'POST' })
         .values({
           id: crypto.randomUUID(),
           userId,
-          billId: parsed.billId,
-          dueDate: parsed.dueDate,
-          amountActual: parsed.amountActual,
-          paidAt: parsed.paidAt,
+          billId: data.billId,
+          dueDate: data.dueDate,
+          amountActual: data.amountActual,
+          paidAt: data.paidAt,
         })
         .returning();
 
@@ -370,7 +366,7 @@ export const logHistoricalPayment = createServerFn({ method: 'POST' })
   });
 
 export const deleteBill = createServerFn({ method: 'POST' })
-  .inputValidator((data: { billId: string }) => data)
+  .validator(billIdSchema)
   .handler(async ({ data }) => {
     const userId = await getAuthUserId();
     const db = getDb();

@@ -6,6 +6,7 @@ import { getAuthUserId, requireAuth } from '#/features/auth/auth-service';
 import { NotFoundError } from '#/lib/errors';
 import {
   createPayScheduleSchema,
+  scheduleIdSchema,
   updatePayScheduleSchema,
 } from './pay-schedules-model';
 
@@ -26,7 +27,7 @@ export const listPaySchedules = createServerFn({ method: 'GET' }).handler(
 );
 
 export const getPayScheduleDetail = createServerFn({ method: 'GET' })
-  .inputValidator((data: { scheduleId: string }) => data)
+  .validator(scheduleIdSchema)
   .handler(async ({ data }) => {
     const { userId } = await requireAuth({ data: {} });
     const db = getDb();
@@ -47,12 +48,9 @@ export const getPayScheduleDetail = createServerFn({ method: 'GET' })
   });
 
 export const createPaySchedule = createServerFn({ method: 'POST' })
-  .inputValidator(
-    (data: Parameters<typeof createPayScheduleSchema.parse>[0]) => data,
-  )
+  .validator(createPayScheduleSchema)
   .handler(async ({ data }) => {
     const userId = await getAuthUserId();
-    const parsed = createPayScheduleSchema.parse(data);
     const db = getDb();
 
     const [created] = await db
@@ -60,8 +58,8 @@ export const createPaySchedule = createServerFn({ method: 'POST' })
       .values({
         id: crypto.randomUUID(),
         userId,
-        name: parsed.name,
-        anchorDay: parsed.anchorDay,
+        name: data.name,
+        anchorDay: data.anchorDay,
       })
       .returning();
 
@@ -70,13 +68,10 @@ export const createPaySchedule = createServerFn({ method: 'POST' })
   });
 
 export const updatePaySchedule = createServerFn({ method: 'POST' })
-  .inputValidator(
-    (data: Parameters<typeof updatePayScheduleSchema.parse>[0]) => data,
-  )
+  .validator(updatePayScheduleSchema)
   .handler(async ({ data }) => {
     const userId = await getAuthUserId();
-    const parsed = updatePayScheduleSchema.parse(data);
-    const { id, ...updateFields } = parsed;
+    const { id, ...updateFields } = data;
 
     const setValues = Object.fromEntries(
       Object.entries(updateFields).filter(([, v]) => v !== undefined),
@@ -95,7 +90,7 @@ export const updatePaySchedule = createServerFn({ method: 'POST' })
   });
 
 export const archivePaySchedule = createServerFn({ method: 'POST' })
-  .inputValidator((data: { scheduleId: string }) => data)
+  .validator(scheduleIdSchema)
   .handler(async ({ data }) => {
     const userId = await getAuthUserId();
     const db = getDb();

@@ -20,3 +20,8 @@ export const updatePayScheduleSchema = createPayScheduleSchema
 
 export type CreatePayScheduleInput = z.infer<typeof createPayScheduleSchema>;
 export type UpdatePayScheduleInput = z.infer<typeof updatePayScheduleSchema>;
+
+export const scheduleIdSchema = z.object({
+  scheduleId: z.uuid(),
+});
+export type ScheduleIdInput = z.infer<typeof scheduleIdSchema>;

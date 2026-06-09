@@ -62,3 +62,33 @@ export const logHistoricalPaymentSchema = z.object({
 export type LogHistoricalPaymentInput = z.infer<
   typeof logHistoricalPaymentSchema
 >;
+
+export const listBillsSchema = z.object({
+  scheduleId: z
+    .union([z.literal('all'), z.literal('unassigned'), z.uuid()])
+    .optional(),
+  manualOnly: z.boolean().optional(),
+});
+
+export const getBillDetailSchema = z.object({
+  billId: z.uuid(),
+  page: z.number().int().positive().optional(),
+});
+
+export const billIdSchema = z.object({
+  billId: z.uuid(),
+});
+
+export const recordBillPaymentSchema = z.object({
+  billId: z.uuid(),
+  amountActual: z.number().int().positive(),
+});
+
+export const updateBillInstanceSchema = z.object({
+  instanceId: z.uuid(),
+  amountActual: z.number().int().positive(),
+});
+
+export const instanceIdSchema = z.object({
+  instanceId: z.uuid(),
+});

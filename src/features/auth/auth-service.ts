@@ -1,7 +1,12 @@
 import { auth } from '@clerk/tanstack-react-start/server';
 import { redirect } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
+import { z } from 'zod';
 import { UnauthorizedError } from '#/lib/errors';
+
+const redirectUrlSchema = z.object({
+  redirect_url: z.string().regex(/^\//, 'Must be a relative path').optional(),
+});
 
 /**
  * Internal server-side helper for use inside `createServerFn` mutation handlers.
@@ -24,7 +29,7 @@ export async function getAuthUserId(): Promise<string> {
  * Do not use inside mutation handlers — use `getAuthUserId` there instead.
  */
 export const requireAuth = createServerFn({ method: 'GET' })
-  .inputValidator((data: { redirect_url?: string }) => data)
+  .validator(redirectUrlSchema)
   .handler(async ({ data: { redirect_url } }) => {
     const { isAuthenticated, userId } = await auth();
 
@@ -46,7 +51,7 @@ export const requireAuth = createServerFn({ method: 'GET' })
  * revisit auth pages once signed in.
  */
 export const disallowAuth = createServerFn({ method: 'GET' })
-  .inputValidator((data?: { redirect_url?: string }) => data)
+  .validator(redirectUrlSchema.optional())
   .handler(async ({ data: { redirect_url } = {} }) => {
     const { isAuthenticated } = await auth();
 
