@@ -73,6 +73,7 @@ export const listBillsSchema = z.object({
 export const getBillDetailSchema = z.object({
   billId: z.uuid(),
   page: z.number().int().positive().optional(),
+  pageSize: z.number().int().positive().optional(),
 });
 
 export const billIdSchema = z.object({

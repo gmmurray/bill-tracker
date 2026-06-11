@@ -48,10 +48,10 @@ export function useBills(filters: BillListFilters) {
   });
 }
 
-export function useBillDetail(billId: string, page?: number) {
+export function useBillDetail(billId: string, page?: number, pageSize?: number) {
   return useQuery({
-    queryKey: [...billKeys.detail(billId), page ?? 1],
-    queryFn: () => getBillDetail({ data: { billId, page } }),
+    queryKey: [...billKeys.detail(billId), page ?? 1, pageSize ?? 20],
+    queryFn: () => getBillDetail({ data: { billId, page, pageSize } }),
   });
 }
 

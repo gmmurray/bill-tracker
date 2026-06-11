@@ -100,7 +100,7 @@ function BillDetailPage() {
   const navigate = useNavigate({ from: Route.fullPath });
   const [logDrawerOpen, setLogDrawerOpen] = React.useState(false);
 
-  const billDetailQuery = useBillDetail(billId, page);
+  const billDetailQuery = useBillDetail(billId, page, 10);
 
   if (billDetailQuery.isLoading) {
     return (
@@ -489,8 +489,7 @@ function DetailField({ label, value }: { label: string; value: string }) {
 
 // --- Ledger Section ---
 
-// Server paginates at 20/page; spec called for 10 but getBillDetail is hardcoded to pageSize=20
-const LEDGER_PAGE_SIZE = 20;
+const LEDGER_PAGE_SIZE = 10;
 
 function LedgerSection({
   bill,

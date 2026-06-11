@@ -118,8 +118,9 @@ export const getBillDetail = createServerFn({ method: 'GET' })
     if (!bill) throw new NotFoundError('Bill not found');
 
     const page = data.page ?? 1;
+    const pageSize = data.pageSize ?? 20;
     const [{ instances, total }, scheduleRows] = await Promise.all([
-      getBillInstancesByBillId(db, data.billId, page, 20),
+      getBillInstancesByBillId(db, data.billId, page, pageSize),
       bill.payScheduleId
         ? db
             .select()
