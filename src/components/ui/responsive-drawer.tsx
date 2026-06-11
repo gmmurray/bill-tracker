@@ -22,7 +22,7 @@ export const ResponsiveDrawerContent = React.forwardRef<
         // Mobile: full-screen bottom sheet
         'inset-x-0 bottom-0 top-0 rounded-t-2xl',
         // Desktop: fixed right drawer
-        'md:inset-y-0 md:right-0 md:left-auto md:w-[480px] md:rounded-none',
+        'md:inset-y-0 md:right-0 md:left-auto md:w-120 md:rounded-none',
         // Mobile animations (slide from bottom)
         'data-[state=open]:animate-slide-in-from-bottom data-[state=closed]:animate-slide-out-to-bottom',
         // Desktop animations (slide from right, overrides mobile)
