@@ -38,6 +38,7 @@ import { Switch } from '#/components/ui/switch';
 import { formatCurrency } from '#/features/bills/bills-helpers';
 import type { BillDetail, BillInstance } from '#/features/bills/bills-model';
 import {
+  useArchiveBill,
   useBillDetail,
   useDeleteBillInstance,
   useLogHistoricalPayment,
@@ -98,6 +99,7 @@ function BillDetailPage() {
   const { billId } = Route.useParams();
   const { edit, page } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
+  const archiveBillMutation = useArchiveBill();
   const [logDrawerOpen, setLogDrawerOpen] = React.useState(false);
 
   const billDetailQuery = useBillDetail(billId, page, 10);
@@ -146,6 +148,13 @@ function BillDetailPage() {
         onSavedEdit={() =>
           navigate({ search: prev => ({ ...prev, edit: false }) })
         }
+        onArchive={async () => {
+          await archiveBillMutation.mutateAsync(bill.id);
+          navigate({
+            to: '/bills',
+            search: { scheduleId: 'all', manualOnly: false },
+          });
+        }}
       />
 
       <div className="mt-6">
@@ -186,12 +195,14 @@ function BlueprintSection({
   onEdit,
   onCancelEdit,
   onSavedEdit,
+  onArchive,
 }: {
   bill: BillDetail;
   isEditing: boolean;
   onEdit: () => void;
   onCancelEdit: () => void;
   onSavedEdit: () => void;
+  onArchive: () => void;
 }) {
   const updateBillMutation = useUpdateBill();
   const schedulesQuery = usePaySchedules();
@@ -250,9 +261,36 @@ function BlueprintSection({
           Bill Details
         </h2>
         {!isEditing && (
-          <Button variant="default" size="sm" onClick={onEdit}>
-            Edit
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button variant="default" size="sm" onClick={onEdit}>
+              Edit
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                >
+                  Archive
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Archive {bill.name}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This cannot be undone from this view.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={onArchive}>
+                    Archive
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         )}
       </CardHeader>
 

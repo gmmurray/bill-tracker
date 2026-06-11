@@ -229,6 +229,18 @@ export const archiveBill = createServerFn({ method: 'POST' })
       .where(and(eq(bills.id, data.billId), eq(bills.userId, userId)));
   });
 
+export const restoreBill = createServerFn({ method: 'POST' })
+  .validator(billIdSchema)
+  .handler(async ({ data }) => {
+    const userId = await getAuthUserId();
+
+    const db = getDb();
+    await db
+      .update(bills)
+      .set({ isActive: true })
+      .where(and(eq(bills.id, data.billId), eq(bills.userId, userId)));
+  });
+
 export const listCurrentMonthInstances = createServerFn({
   method: 'GET',
 }).handler(async () => {

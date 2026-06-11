@@ -21,6 +21,7 @@ import {
   listCurrentMonthInstances,
   logHistoricalPayment,
   recordBillPayment,
+  restoreBill,
   updateBill,
   updateBillInstance,
 } from './bills-service';
@@ -230,6 +231,22 @@ export function useLogHistoricalPayment() {
     },
     onError: err => {
       toast.error(getErrorMessage(err, 'Failed to log payment'));
+    },
+  });
+}
+
+export function useRestoreBill() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (billId: string) => restoreBill({ data: { billId } }),
+    onSuccess: () => {
+      toast.success('Bill restored');
+      queryClient.invalidateQueries({ queryKey: billKeys.archived() });
+      queryClient.invalidateQueries({ queryKey: billKeys.archivedCount() });
+      queryClient.invalidateQueries({ queryKey: billKeys.lists() });
+    },
+    onError: err => {
+      toast.error(getErrorMessage(err, 'Failed to restore bill'));
     },
   });
 }
