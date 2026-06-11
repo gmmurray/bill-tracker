@@ -4,6 +4,10 @@ import type {
   BillState,
 } from '#/features/bills/bills-model';
 
+export function formatCurrency(cents: number) {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
 import type { PaySchedule } from '#/features/pay-schedules/pay-schedules-model';
 
 export function clampDayToMonth(

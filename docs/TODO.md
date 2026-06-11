@@ -20,7 +20,7 @@
   - [x] **State derivation** — `deriveBillState(bill, instances, today)` in `bills-helpers.ts` returning the `PAID | OVERDUE | MISSED_SCHEDULE | UPCOMING` union from CLAUDE.md (frontend-only, O(1) Map lookup keyed on `billId`)
 - [x] **Responsive drawer/sheet component** — [responsive-drawer.tsx](src/components/ui/responsive-drawer.tsx)
 - [x] **Backend gaps** — `logHistoricalPayment` + `deleteBill` server functions and hooks ([bills-service.ts](src/features/bills/bills-service.ts), [bills-queries.ts](src/features/bills/bills-queries.ts))
-- [ ] **Bill management page** — see [docs/pages/bill-management.md](docs/pages/bill-management.md)
+- [x] **Bill management page** — [bills/index.tsx](src/routes/_authenticated/bills/index.tsx)
 - [ ] **Bill detail page** — see [docs/pages/bill-detail.md](docs/pages/bill-detail.md)
 - [ ] **Bills archive page** — see [docs/pages/bills-archive.md](docs/pages/bills-archive.md)
 - [ ] Dashboard page (JIT state derivation, 3-row hierarchy)

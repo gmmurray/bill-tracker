@@ -3,6 +3,7 @@ import {
   clampDayToMonth,
   computeNearestUnpaidDueDate,
   deriveBillState,
+  formatCurrency,
 } from '#/features/bills/bills-helpers';
 import type { BillInstance } from '#/features/bills/bills-model';
 
@@ -18,6 +19,27 @@ function makeInstance(billId: string, dueDate: string): BillInstance {
     updatedAt: '2026-01-01T00:00:00.000Z',
   };
 }
+
+// ---------------------------------------------------------------------------
+// formatCurrency
+// ---------------------------------------------------------------------------
+
+describe('formatCurrency', () => {
+  it('formats whole dollar amounts', () => {
+    expect(formatCurrency(1000)).toBe('$10.00');
+    expect(formatCurrency(100)).toBe('$1.00');
+  });
+
+  it('formats cents with two decimal places', () => {
+    expect(formatCurrency(150)).toBe('$1.50');
+    expect(formatCurrency(9999)).toBe('$99.99');
+    expect(formatCurrency(1)).toBe('$0.01');
+  });
+
+  it('formats zero', () => {
+    expect(formatCurrency(0)).toBe('$0.00');
+  });
+});
 
 // ---------------------------------------------------------------------------
 // clampDayToMonth

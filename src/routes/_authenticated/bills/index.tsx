@@ -35,6 +35,7 @@ import {
   SelectValue,
 } from '#/components/ui/select';
 import { Switch } from '#/components/ui/switch';
+import { formatCurrency } from '#/features/bills/bills-helpers';
 import type { BillWithSchedule } from '#/features/bills/bills-model';
 import {
   useArchiveBill,
@@ -56,10 +57,6 @@ export const Route = createFileRoute('/_authenticated/bills/')({
   validateSearch: searchSchema,
   component: BillManagementPage,
 });
-
-function formatCurrency(cents: number) {
-  return `$${(cents / 100).toFixed(2)}`;
-}
 
 function BillManagementPage() {
   const { scheduleId, manualOnly } = Route.useSearch();
@@ -164,7 +161,7 @@ function BillManagementPage() {
                     navigate({
                       to: '/bills/$billId',
                       params: { billId: bill.id },
-                      search: { edit: false },
+                      search: { edit: false, page: 1 },
                     })
                   }
                 />
@@ -193,7 +190,7 @@ function BillManagementPage() {
           navigate({
             to: '/bills/$billId',
             params: { billId: newBillId },
-            search: { edit: true },
+            search: { edit: true, page: 1 },
           });
         }}
         createBillMutation={createBillMutation}
