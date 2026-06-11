@@ -8,6 +8,7 @@ import {
   Scripts,
 } from '@tanstack/react-router';
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
+import { Toaster } from 'sonner';
 import NotFound from '#/components/not-found';
 import appCss from '../styles.css?url';
 
@@ -68,6 +69,23 @@ function RootComponent() {
   return (
     <ClerkProvider>
       <Outlet />
+      <Toaster
+        richColors
+        position="top-right"
+        closeButton
+        toastOptions={{
+          classNames: {
+            toast:
+              'bg-chill-surface border border-chill-border text-chill-text shadow-sm rounded-lg font-sans',
+            title: 'text-chill-text font-medium',
+            description: 'text-chill-text-muted',
+            closeButton:
+              'bg-chill-surface border-chill-border text-chill-text-muted hover:text-chill-text',
+            success: 'bg-chill-mint border-chill-mint-hover text-chill-text',
+            error: 'bg-chill-peach border-chill-peach-border text-chill-text',
+          },
+        }}
+      />
     </ClerkProvider>
   );
 }

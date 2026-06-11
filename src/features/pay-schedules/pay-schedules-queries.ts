@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { getErrorMessage } from '#/lib/utils';
 import type {
   CreatePayScheduleInput,
   PaySchedule,
@@ -39,7 +41,11 @@ export function useCreatePaySchedule() {
     mutationFn: (input: CreatePayScheduleInput) =>
       createPaySchedule({ data: input }),
     onSuccess: () => {
+      toast.success('Schedule created');
       queryClient.invalidateQueries({ queryKey: payScheduleKeys.lists() });
+    },
+    onError: err => {
+      toast.error(getErrorMessage(err, 'Failed to create schedule'));
     },
   });
 }
@@ -50,7 +56,11 @@ export function useUpdatePaySchedule() {
     mutationFn: (input: UpdatePayScheduleInput) =>
       updatePaySchedule({ data: input }),
     onSuccess: () => {
+      toast.success('Schedule saved');
       queryClient.invalidateQueries({ queryKey: payScheduleKeys.lists() });
+    },
+    onError: err => {
+      toast.error(getErrorMessage(err, 'Failed to save schedule'));
     },
   });
 }
@@ -71,12 +81,13 @@ export function useArchivePaySchedule() {
       );
       return { snapshot };
     },
-    onError: (_err, _scheduleId, context) => {
+    onError: (err, _scheduleId, context) => {
       if (context) {
         for (const [key, data] of context.snapshot) {
           queryClient.setQueryData(key, data);
         }
       }
+      toast.error(getErrorMessage(err, 'Failed to archive schedule'));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: payScheduleKeys.lists() });

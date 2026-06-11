@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { getErrorMessage } from '#/lib/utils';
 import type {
   Bill,
   BillListFilters,
@@ -48,7 +50,11 @@ export function useBills(filters: BillListFilters) {
   });
 }
 
-export function useBillDetail(billId: string, page?: number, pageSize?: number) {
+export function useBillDetail(
+  billId: string,
+  page?: number,
+  pageSize?: number,
+) {
   return useQuery({
     queryKey: [...billKeys.detail(billId), page ?? 1, pageSize ?? 20],
     queryFn: () => getBillDetail({ data: { billId, page, pageSize } }),
@@ -74,7 +80,11 @@ export function useCreateBill() {
   return useMutation({
     mutationFn: (input: CreateBillInput) => createBill({ data: input }),
     onSuccess: () => {
+      toast.success('Bill created');
       queryClient.invalidateQueries({ queryKey: billKeys.lists() });
+    },
+    onError: err => {
+      toast.error(getErrorMessage(err, 'Failed to create bill'));
     },
   });
 }
@@ -84,10 +94,14 @@ export function useUpdateBill() {
   return useMutation({
     mutationFn: (input: UpdateBillInput) => updateBill({ data: input }),
     onSuccess: (_data, variables) => {
+      toast.success('Bill saved');
       queryClient.invalidateQueries({
         queryKey: billKeys.detail(variables.id),
       });
       queryClient.invalidateQueries({ queryKey: billKeys.lists() });
+    },
+    onError: err => {
+      toast.error(getErrorMessage(err, 'Failed to save bill'));
     },
   });
 }
@@ -107,12 +121,13 @@ export function useArchiveBill() {
       );
       return { snapshot };
     },
-    onError: (_err, _billId, context) => {
+    onError: (err, _billId, context) => {
       if (context) {
         for (const [key, data] of context.snapshot) {
           queryClient.setQueryData(key, data);
         }
       }
+      toast.error(getErrorMessage(err, 'Failed to archive bill'));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: billKeys.lists() });
@@ -134,6 +149,7 @@ export function useRecordBillPayment() {
     mutationFn: (input: { billId: string; amountActual: number }) =>
       recordBillPayment({ data: input }),
     onSuccess: (_data, variables) => {
+      toast.success('Payment recorded');
       queryClient.invalidateQueries({ queryKey: billKeys.lists() });
       queryClient.invalidateQueries({
         queryKey: billKeys.detail(variables.billId),
@@ -141,6 +157,9 @@ export function useRecordBillPayment() {
       queryClient.invalidateQueries({
         queryKey: billKeys.currentMonthInstances(),
       });
+    },
+    onError: err => {
+      toast.error(getErrorMessage(err, 'Failed to record payment'));
     },
   });
 }
@@ -160,12 +179,16 @@ export function useUpdateBillInstance() {
         },
       }),
     onSuccess: (_data, variables) => {
+      toast.success('Payment updated');
       queryClient.invalidateQueries({
         queryKey: billKeys.detail(variables.billId),
       });
       queryClient.invalidateQueries({
         queryKey: billKeys.currentMonthInstances(),
       });
+    },
+    onError: err => {
+      toast.error(getErrorMessage(err, 'Failed to update payment'));
     },
   });
 }
@@ -176,12 +199,16 @@ export function useDeleteBillInstance() {
     mutationFn: (input: { instanceId: string; billId: string }) =>
       deleteBillInstance({ data: { instanceId: input.instanceId } }),
     onSuccess: (_data, variables) => {
+      toast.success('Payment deleted');
       queryClient.invalidateQueries({
         queryKey: billKeys.detail(variables.billId),
       });
       queryClient.invalidateQueries({
         queryKey: billKeys.currentMonthInstances(),
       });
+    },
+    onError: err => {
+      toast.error(getErrorMessage(err, 'Failed to delete payment'));
     },
   });
 }
@@ -192,6 +219,7 @@ export function useLogHistoricalPayment() {
     mutationFn: (input: LogHistoricalPaymentInput) =>
       logHistoricalPayment({ data: input }),
     onSuccess: (_data, variables) => {
+      toast.success('Payment logged');
       queryClient.invalidateQueries({ queryKey: billKeys.lists() });
       queryClient.invalidateQueries({
         queryKey: billKeys.detail(variables.billId),
@@ -199,6 +227,9 @@ export function useLogHistoricalPayment() {
       queryClient.invalidateQueries({
         queryKey: billKeys.currentMonthInstances(),
       });
+    },
+    onError: err => {
+      toast.error(getErrorMessage(err, 'Failed to log payment'));
     },
   });
 }
@@ -218,12 +249,16 @@ export function useDeleteBill() {
       );
       return { snapshot };
     },
-    onError: (_err, _billId, context) => {
+    onError: (err, _billId, context) => {
       if (context) {
         for (const [key, data] of context.snapshot) {
           queryClient.setQueryData(key, data);
         }
       }
+      toast.error(getErrorMessage(err, 'Failed to delete bill'));
+    },
+    onSuccess: () => {
+      toast.success('Bill permanently deleted');
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: billKeys.archived() });

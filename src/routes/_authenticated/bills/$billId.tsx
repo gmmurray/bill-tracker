@@ -216,18 +216,16 @@ function BlueprintSection({
   });
 
   React.useEffect(() => {
-    if (!isEditing) {
-      reset({
-        name: bill.name,
-        amountDollars: (bill.amountExpected / 100).toFixed(2),
-        dueDayOfMonth: String(bill.dueDayOfMonth),
-        payScheduleId: bill.payScheduleId ?? 'none',
-        paymentUrl: bill.paymentUrl ?? '',
-        isAutoPay: bill.isAutoPay,
-        notes: bill.notes ?? '',
-      });
-    }
-  }, [bill, isEditing, reset]);
+    reset({
+      name: bill.name,
+      amountDollars: (bill.amountExpected / 100).toFixed(2),
+      dueDayOfMonth: String(bill.dueDayOfMonth),
+      payScheduleId: bill.payScheduleId ?? 'none',
+      paymentUrl: bill.paymentUrl ?? '',
+      isAutoPay: bill.isAutoPay,
+      notes: bill.notes ?? '',
+    });
+  }, [bill, reset]);
 
   async function onSubmit(values: EditBillFormValues) {
     await updateBillMutation.mutateAsync({
