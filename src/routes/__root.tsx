@@ -10,6 +10,7 @@ import {
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 import { Toaster } from 'sonner';
 import NotFound from '#/components/not-found';
+import { RouterProgress } from '#/components/router-progress';
 import appCss from '../styles.css?url';
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
@@ -68,6 +69,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   return (
     <ClerkProvider>
+      <RouterProgress />
       <Outlet />
       <Toaster
         richColors

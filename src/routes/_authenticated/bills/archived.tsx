@@ -15,6 +15,8 @@ import { Button } from '#/components/ui/button';
 import { Card } from '#/components/ui/card';
 import type { Bill } from '#/features/bills/bills-model';
 import {
+  archivedBillsCountQueryOptions,
+  archivedBillsQueryOptions,
   useArchivedBills,
   useArchivedBillsCount,
   useDeleteBill,
@@ -22,6 +24,11 @@ import {
 } from '#/features/bills/bills-queries';
 
 export const Route = createFileRoute('/_authenticated/bills/archived')({
+  loader: ({ context }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(archivedBillsQueryOptions()),
+      context.queryClient.ensureQueryData(archivedBillsCountQueryOptions()),
+    ]),
   component: BillsArchivePage,
 });
 
@@ -31,7 +38,6 @@ function BillsArchivePage() {
 
   const count = archivedCountQuery.data?.count ?? 0;
   const bills = archivedBillsQuery.data ?? [];
-  const isLoading = archivedBillsQuery.isLoading;
 
   return (
     <div className="px-6 py-8 max-w-5xl mx-auto">
@@ -52,11 +58,7 @@ function BillsArchivePage() {
       </div>
 
       <Card>
-        {isLoading ? (
-          <div className="px-6 py-10 text-center text-chill-text-muted text-sm">
-            Loading...
-          </div>
-        ) : bills.length === 0 ? (
+        {bills.length === 0 ? (
           <div className="px-6 py-10 text-center text-chill-text-muted text-sm">
             No archived bills.
           </div>

@@ -37,12 +37,17 @@ import { Switch } from '#/components/ui/switch';
 import { formatCurrency } from '#/features/bills/bills-helpers';
 import type { BillWithSchedule } from '#/features/bills/bills-model';
 import {
+  archivedBillsCountQueryOptions,
+  billsQueryOptions,
   useArchiveBill,
   useArchivedBillsCount,
   useBills,
   useCreateBill,
 } from '#/features/bills/bills-queries';
-import { usePaySchedules } from '#/features/pay-schedules/pay-schedules-queries';
+import {
+  paySchedulesQueryOptions,
+  usePaySchedules,
+} from '#/features/pay-schedules/pay-schedules-queries';
 import { cn } from '#/lib/utils';
 
 const searchSchema = z.object({
@@ -54,6 +59,16 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute('/_authenticated/bills/')({
   validateSearch: searchSchema,
+  loaderDeps: ({ search }) => ({
+    scheduleId: search.scheduleId,
+    manualOnly: search.manualOnly,
+  }),
+  loader: ({ context, deps }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(billsQueryOptions(deps)),
+      context.queryClient.ensureQueryData(paySchedulesQueryOptions()),
+      context.queryClient.ensureQueryData(archivedBillsCountQueryOptions()),
+    ]),
   component: BillManagementPage,
 });
 
@@ -120,11 +135,7 @@ function BillManagementPage() {
       </Card>
 
       <Card className="mb-4">
-        {billsQuery.isLoading ? (
-          <div className="px-6 py-10 text-center text-chill-text-muted text-sm">
-            Loading...
-          </div>
-        ) : !billsQuery.data?.length ? (
+        {!billsQuery.data?.length ? (
           <div className="px-6 py-10 text-center text-chill-text-muted text-sm">
             No bills match these filters.
           </div>

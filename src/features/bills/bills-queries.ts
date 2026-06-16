@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  queryOptions,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { getErrorMessage } from '#/lib/utils';
 import type {
@@ -40,8 +45,8 @@ export const billKeys = {
     [...billKeys.all, 'currentMonthInstances'] as const,
 };
 
-export function useBills(filters: BillListFilters) {
-  return useQuery({
+export function billsQueryOptions(filters: BillListFilters) {
+  return queryOptions({
     queryKey: billKeys.list(filters),
     queryFn: () =>
       listBills({
@@ -53,29 +58,49 @@ export function useBills(filters: BillListFilters) {
   });
 }
 
-export function useBillDetail(
+export function billDetailQueryOptions(
   billId: string,
   page?: number,
   pageSize?: number,
 ) {
-  return useQuery({
+  return queryOptions({
     queryKey: [...billKeys.detail(billId), page ?? 1, pageSize ?? 20],
     queryFn: () => getBillDetail({ data: { billId, page, pageSize } }),
   });
 }
 
-export function useArchivedBills() {
-  return useQuery({
+export function archivedBillsQueryOptions() {
+  return queryOptions({
     queryKey: billKeys.archived(),
     queryFn: () => getArchivedBills(),
   });
 }
 
-export function useArchivedBillsCount() {
-  return useQuery({
+export function archivedBillsCountQueryOptions() {
+  return queryOptions({
     queryKey: billKeys.archivedCount(),
     queryFn: () => getArchivedBillsCount(),
   });
+}
+
+export function useBills(filters: BillListFilters) {
+  return useQuery(billsQueryOptions(filters));
+}
+
+export function useBillDetail(
+  billId: string,
+  page?: number,
+  pageSize?: number,
+) {
+  return useQuery(billDetailQueryOptions(billId, page, pageSize));
+}
+
+export function useArchivedBills() {
+  return useQuery(archivedBillsQueryOptions());
+}
+
+export function useArchivedBillsCount() {
+  return useQuery(archivedBillsCountQueryOptions());
 }
 
 export function useCreateBill() {

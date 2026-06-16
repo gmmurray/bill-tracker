@@ -14,6 +14,8 @@ import { Button } from '#/components/ui/button';
 import { Card } from '#/components/ui/card';
 import type { PaySchedule } from '#/features/pay-schedules/pay-schedules-model';
 import {
+  archivedPaySchedulesCountQueryOptions,
+  archivedPaySchedulesQueryOptions,
   useArchivedPaySchedules,
   useArchivedPaySchedulesCount,
   useDeletePaySchedule,
@@ -21,6 +23,13 @@ import {
 } from '#/features/pay-schedules/pay-schedules-queries';
 
 export const Route = createFileRoute('/_authenticated/schedules/archived')({
+  loader: ({ context }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(archivedPaySchedulesQueryOptions()),
+      context.queryClient.ensureQueryData(
+        archivedPaySchedulesCountQueryOptions(),
+      ),
+    ]),
   component: SchedulesArchivePage,
 });
 
@@ -30,7 +39,6 @@ function SchedulesArchivePage() {
 
   const count = countQuery.data?.count ?? 0;
   const schedules = archivedQuery.data ?? [];
-  const isLoading = archivedQuery.isLoading;
 
   return (
     <div className="px-6 py-8 max-w-5xl mx-auto">
@@ -50,11 +58,7 @@ function SchedulesArchivePage() {
       </div>
 
       <Card>
-        {isLoading ? (
-          <div className="px-6 py-10 text-center text-chill-text-muted text-sm">
-            Loading...
-          </div>
-        ) : schedules.length === 0 ? (
+        {schedules.length === 0 ? (
           <div className="px-6 py-10 text-center text-chill-text-muted text-sm">
             No archived schedules.
           </div>

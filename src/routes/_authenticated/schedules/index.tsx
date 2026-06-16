@@ -38,12 +38,15 @@ import { Switch } from '#/components/ui/switch';
 import { formatCurrency } from '#/features/bills/bills-helpers';
 import type { BillWithSchedule } from '#/features/bills/bills-model';
 import {
+  billsQueryOptions,
   useBills,
   useBulkAssignBills,
   useUpdateBill,
 } from '#/features/bills/bills-queries';
 import type { PaySchedule } from '#/features/pay-schedules/pay-schedules-model';
 import {
+  archivedPaySchedulesCountQueryOptions,
+  paySchedulesQueryOptions,
   useArchivedPaySchedulesCount,
   useArchivePaySchedule,
   useCreatePaySchedule,
@@ -53,6 +56,16 @@ import {
 import { cn } from '#/lib/utils';
 
 export const Route = createFileRoute('/_authenticated/schedules/')({
+  loader: ({ context }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(paySchedulesQueryOptions()),
+      context.queryClient.ensureQueryData(
+        billsQueryOptions({ scheduleId: 'all', manualOnly: false }),
+      ),
+      context.queryClient.ensureQueryData(
+        archivedPaySchedulesCountQueryOptions(),
+      ),
+    ]),
   component: SchedulesPage,
 });
 

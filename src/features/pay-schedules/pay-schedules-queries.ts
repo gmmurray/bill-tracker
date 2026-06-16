@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  queryOptions,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { billKeys } from '#/features/bills/bills-queries';
 import { getErrorMessage } from '#/lib/utils';
@@ -27,12 +32,30 @@ export const payScheduleKeys = {
   archivedCount: () => [...payScheduleKeys.all, 'archivedCount'] as const,
 };
 
-export function usePaySchedules() {
-  return useQuery({
+export function paySchedulesQueryOptions() {
+  return queryOptions({
     queryKey: payScheduleKeys.lists(),
     queryFn: () => listPaySchedules(),
     staleTime: 5 * 60 * 1000,
   });
+}
+
+export function archivedPaySchedulesQueryOptions() {
+  return queryOptions({
+    queryKey: payScheduleKeys.archived(),
+    queryFn: () => getArchivedPaySchedules(),
+  });
+}
+
+export function archivedPaySchedulesCountQueryOptions() {
+  return queryOptions({
+    queryKey: payScheduleKeys.archivedCount(),
+    queryFn: () => getArchivedPaySchedulesCount(),
+  });
+}
+
+export function usePaySchedules() {
+  return useQuery(paySchedulesQueryOptions());
 }
 
 export function usePayScheduleDetail(scheduleId: string) {
@@ -73,17 +96,11 @@ export function useUpdatePaySchedule() {
 }
 
 export function useArchivedPaySchedules() {
-  return useQuery({
-    queryKey: payScheduleKeys.archived(),
-    queryFn: () => getArchivedPaySchedules(),
-  });
+  return useQuery(archivedPaySchedulesQueryOptions());
 }
 
 export function useArchivedPaySchedulesCount() {
-  return useQuery({
-    queryKey: payScheduleKeys.archivedCount(),
-    queryFn: () => getArchivedPaySchedulesCount(),
-  });
+  return useQuery(archivedPaySchedulesCountQueryOptions());
 }
 
 export function useRestorePaySchedule() {

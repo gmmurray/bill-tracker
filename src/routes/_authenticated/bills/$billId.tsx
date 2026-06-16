@@ -37,6 +37,7 @@ import { Switch } from '#/components/ui/switch';
 import { formatCurrency } from '#/features/bills/bills-helpers';
 import type { BillDetail, BillInstance } from '#/features/bills/bills-model';
 import {
+  billDetailQueryOptions,
   useArchiveBill,
   useBillDetail,
   useDeleteBillInstance,
@@ -54,6 +55,11 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute('/_authenticated/bills/$billId')({
   validateSearch: searchSchema,
+  loaderDeps: ({ search }) => ({ page: search.page }),
+  loader: ({ context, params, deps }) =>
+    context.queryClient.ensureQueryData(
+      billDetailQueryOptions(params.billId, deps.page, 10),
+    ),
   component: BillDetailPage,
 });
 
@@ -102,16 +108,6 @@ function BillDetailPage() {
   const [logDrawerOpen, setLogDrawerOpen] = React.useState(false);
 
   const billDetailQuery = useBillDetail(billId, page, 10);
-
-  if (billDetailQuery.isLoading) {
-    return (
-      <div className="px-6 py-8 max-w-5xl mx-auto">
-        <div className="py-20 text-center text-chill-text-muted text-sm">
-          Loading...
-        </div>
-      </div>
-    );
-  }
 
   if (billDetailQuery.isError || !billDetailQuery.data) {
     return (
