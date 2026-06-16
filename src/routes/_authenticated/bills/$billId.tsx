@@ -13,7 +13,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '#/components/ui/alert-dialog';
-import { Badge } from '#/components/ui/badge';
 import { Button } from '#/components/ui/button';
 import { Card, CardBody, CardFooter, CardHeader } from '#/components/ui/card';
 import { Input } from '#/components/ui/input';
@@ -468,11 +467,12 @@ function BlueprintSection({
                 Schedule
               </p>
               <p className="text-sm text-chill-text">
-                {bill.scheduleName ?? 'Unassigned'}
-                {bill.isOrphaned && (
-                  <Badge className="ml-2 bg-amber-100 text-amber-800 border border-amber-200">
-                    Inactive schedule
-                  </Badge>
+                {bill.isOrphaned ? (
+                  <span className="text-amber-700">
+                    {bill.scheduleName} (inactive)
+                  </span>
+                ) : (
+                  (bill.scheduleName ?? 'Unassigned')
                 )}
               </p>
             </div>

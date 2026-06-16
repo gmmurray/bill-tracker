@@ -13,7 +13,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '#/components/ui/alert-dialog';
-import { Badge } from '#/components/ui/badge';
 import { Button } from '#/components/ui/button';
 import { Card } from '#/components/ui/card';
 import { Input } from '#/components/ui/input';
@@ -130,44 +129,55 @@ function BillManagementPage() {
             No bills match these filters.
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-chill-border text-left">
-                <th className="px-4 py-3 font-medium text-chill-text-muted w-14">
-                  Day
-                </th>
-                <th className="px-4 py-3 font-medium text-chill-text-muted">
-                  Bill
-                </th>
-                <th className="px-4 py-3 font-medium text-chill-text-muted">
-                  Schedule
-                </th>
-                <th className="px-4 py-3 font-medium text-chill-text-muted text-right">
-                  Expected
-                </th>
-                <th className="px-4 py-3 font-medium text-chill-text-muted text-center w-16">
-                  Auto
-                </th>
-                <th className="px-4 py-3 w-24" />
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            <table className="hidden md:table w-full text-sm">
+              <thead>
+                <tr className="border-b border-chill-border text-left">
+                  <th className="px-4 py-3 font-medium text-chill-text-muted w-14">
+                    Day
+                  </th>
+                  <th className="px-4 py-3 font-medium text-chill-text-muted">
+                    Bill
+                  </th>
+                  <th className="px-4 py-3 font-medium text-chill-text-muted">
+                    Schedule
+                  </th>
+                  <th className="px-4 py-3 font-medium text-chill-text-muted text-right">
+                    Expected
+                  </th>
+                  <th className="px-4 py-3 font-medium text-chill-text-muted text-center w-16">
+                    Auto
+                  </th>
+                  <th className="px-4 py-3 w-24" />
+                </tr>
+              </thead>
+              <tbody>
+                {billsQuery.data.map(bill => (
+                  <BillTableRow
+                    key={bill.id}
+                    bill={bill}
+                    onArchive={() => archiveBillMutation.mutate(bill.id)}
+                    onRowClick={() =>
+                      navigate({
+                        to: '/bills/$billId',
+                        params: { billId: bill.id },
+                        search: { edit: false, page: 1 },
+                      })
+                    }
+                  />
+                ))}
+              </tbody>
+            </table>
+            <ul className="md:hidden divide-y divide-chill-border">
               {billsQuery.data.map(bill => (
-                <BillTableRow
+                <BillMobileCard
                   key={bill.id}
                   bill={bill}
                   onArchive={() => archiveBillMutation.mutate(bill.id)}
-                  onRowClick={() =>
-                    navigate({
-                      to: '/bills/$billId',
-                      params: { billId: bill.id },
-                      search: { edit: false, page: 1 },
-                    })
-                  }
                 />
               ))}
-            </tbody>
-          </table>
+            </ul>
+          </>
         )}
       </Card>
 
@@ -218,11 +228,10 @@ function BillTableRow({
       </td>
       <td className="px-4 py-3 font-medium">{bill.name}</td>
       <td className="px-4 py-3 text-chill-text-muted">
-        <span>{bill.scheduleName ?? 'Unassigned'}</span>
-        {bill.isOrphaned && (
-          <Badge className="ml-2 bg-amber-100 text-amber-800 border border-amber-200">
-            Inactive schedule
-          </Badge>
+        {bill.isOrphaned ? (
+          <span className="text-amber-700">{bill.scheduleName} (inactive)</span>
+        ) : (
+          <span>{bill.scheduleName ?? 'Unassigned'}</span>
         )}
       </td>
       <td className="px-4 py-3 text-right tabular-nums">
@@ -286,6 +295,91 @@ function BillTableRow({
         </AlertDialog>
       </td>
     </tr>
+  );
+}
+
+function BillMobileCard({
+  bill,
+  onArchive,
+}: {
+  bill: BillWithSchedule;
+  onArchive: () => void;
+}) {
+  return (
+    <li className="px-4 py-4">
+      <Link
+        to="/bills/$billId"
+        params={{ billId: bill.id }}
+        search={{ edit: false, page: 1 }}
+        className="block -mx-4 -mt-4 p-4 rounded-t hover:bg-chill-purple-light transition-colors"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="font-medium text-chill-text truncate">{bill.name}</p>
+            <p className="text-xs text-chill-text-muted mt-0.5">
+              Due {bill.dueDayOfMonth} ·{' '}
+              {bill.isOrphaned ? (
+                <span className="text-amber-700">
+                  {bill.scheduleName} (inactive)
+                </span>
+              ) : (
+                (bill.scheduleName ?? 'Unassigned')
+              )}
+            </p>
+          </div>
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <span className="font-medium tabular-nums">
+              {formatCurrency(bill.amountExpected)}
+            </span>
+            {bill.isAutoPay && (
+              <span className="text-xs text-chill-teal flex items-center gap-1">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+                Auto
+              </span>
+            )}
+          </div>
+        </div>
+      </Link>
+      <div className="mt-2 flex justify-end">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-label={`Archive ${bill.name}`}
+              className="text-red-600 hover:bg-red-50 hover:text-red-700"
+            >
+              Archive
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Archive {bill.name}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This cannot be undone from this view.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={onArchive}>Archive</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </li>
   );
 }
 

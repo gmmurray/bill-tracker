@@ -59,27 +59,37 @@ function SchedulesArchivePage() {
             No archived schedules.
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-chill-border text-left">
-                <th className="px-4 py-3 font-medium text-chill-text-muted">
-                  Name
-                </th>
-                <th className="px-4 py-3 font-medium text-chill-text-muted w-32">
-                  Anchor Day
-                </th>
-                <th className="px-4 py-3 font-medium text-chill-text-muted w-44">
-                  Archived
-                </th>
-                <th className="px-4 py-3 w-40" />
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            <table className="hidden md:table w-full text-sm">
+              <thead>
+                <tr className="border-b border-chill-border text-left">
+                  <th className="px-4 py-3 font-medium text-chill-text-muted">
+                    Name
+                  </th>
+                  <th className="px-4 py-3 font-medium text-chill-text-muted w-32">
+                    Anchor Day
+                  </th>
+                  <th className="px-4 py-3 font-medium text-chill-text-muted w-44">
+                    Archived
+                  </th>
+                  <th className="px-4 py-3 w-40" />
+                </tr>
+              </thead>
+              <tbody>
+                {schedules.map(schedule => (
+                  <ArchivedScheduleRow key={schedule.id} schedule={schedule} />
+                ))}
+              </tbody>
+            </table>
+            <ul className="md:hidden divide-y divide-chill-border">
               {schedules.map(schedule => (
-                <ArchivedScheduleRow key={schedule.id} schedule={schedule} />
+                <ArchivedScheduleMobileCard
+                  key={schedule.id}
+                  schedule={schedule}
+                />
               ))}
-            </tbody>
-          </table>
+            </ul>
+          </>
         )}
       </Card>
     </div>
@@ -145,6 +155,64 @@ function ArchivedScheduleRow({ schedule }: { schedule: PaySchedule }) {
         </div>
       </td>
     </tr>
+  );
+}
+
+function ArchivedScheduleMobileCard({ schedule }: { schedule: PaySchedule }) {
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
+  const restoreMutation = useRestorePaySchedule();
+  const deleteMutation = useDeletePaySchedule();
+
+  return (
+    <li className="px-4 py-4">
+      <p className="font-medium text-chill-text">{schedule.name}</p>
+      <p className="text-xs text-chill-text-muted mt-0.5">
+        Anchor {formatOrdinal(schedule.anchorDay)} · Archived{' '}
+        {formatArchiveDate(schedule.updatedAt)}
+      </p>
+      <div className="mt-2 flex justify-end gap-1">
+        <Button
+          variant="default"
+          size="sm"
+          disabled={restoreMutation.isPending}
+          onClick={() => restoreMutation.mutate(schedule.id)}
+        >
+          Restore
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-red-600 hover:bg-red-50 hover:text-red-700"
+          onClick={() => setDeleteOpen(true)}
+        >
+          Delete
+        </Button>
+        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Permanently delete {schedule.name}?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This will unassign any bills currently assigned to it. This
+                cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  deleteMutation.mutate(schedule.id);
+                  setDeleteOpen(false);
+                }}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </li>
   );
 }
 

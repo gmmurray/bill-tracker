@@ -346,7 +346,7 @@ function BillRow({
                     {s.name}
                   </DropdownMenuItem>
                 ))}
-                <DropdownMenuSeparator />
+                {otherSchedules.length > 0 && <DropdownMenuSeparator />}
                 <DropdownMenuItem
                   onSelect={() =>
                     updateBillMutation.mutate({

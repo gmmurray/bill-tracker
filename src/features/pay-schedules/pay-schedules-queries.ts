@@ -98,6 +98,8 @@ export function useRestorePaySchedule() {
         queryKey: payScheduleKeys.archivedCount(),
       });
       queryClient.invalidateQueries({ queryKey: payScheduleKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: billKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: billKeys.details() });
     },
     onError: err => {
       toast.error(getErrorMessage(err, 'Failed to restore schedule'));
@@ -176,6 +178,8 @@ export function useArchivePaySchedule() {
       queryClient.invalidateQueries({
         queryKey: payScheduleKeys.archivedCount(),
       });
+      queryClient.invalidateQueries({ queryKey: billKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: billKeys.details() });
     },
   });
 }

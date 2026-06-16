@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
+import * as React from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,27 +61,34 @@ function BillsArchivePage() {
             No archived bills.
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-chill-border text-left">
-                <th className="px-4 py-3 font-medium text-chill-text-muted">
-                  Bill Name
-                </th>
-                <th className="px-4 py-3 font-medium text-chill-text-muted w-28">
-                  Due Day
-                </th>
-                <th className="px-4 py-3 font-medium text-chill-text-muted w-44">
-                  Archived
-                </th>
-                <th className="px-4 py-3 w-36" />
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            <table className="hidden md:table w-full text-sm">
+              <thead>
+                <tr className="border-b border-chill-border text-left">
+                  <th className="px-4 py-3 font-medium text-chill-text-muted">
+                    Bill Name
+                  </th>
+                  <th className="px-4 py-3 font-medium text-chill-text-muted w-28">
+                    Due Day
+                  </th>
+                  <th className="px-4 py-3 font-medium text-chill-text-muted w-44">
+                    Archived
+                  </th>
+                  <th className="px-4 py-3 w-36" />
+                </tr>
+              </thead>
+              <tbody>
+                {bills.map(bill => (
+                  <ArchivedBillRow key={bill.id} bill={bill} />
+                ))}
+              </tbody>
+            </table>
+            <ul className="md:hidden divide-y divide-chill-border">
               {bills.map(bill => (
-                <ArchivedBillRow key={bill.id} bill={bill} />
+                <ArchivedBillMobileCard key={bill.id} bill={bill} />
               ))}
-            </tbody>
-          </table>
+            </ul>
+          </>
         )}
       </Card>
     </div>
@@ -143,6 +151,64 @@ function ArchivedBillRow({ bill }: { bill: Bill }) {
         </div>
       </td>
     </tr>
+  );
+}
+
+function ArchivedBillMobileCard({ bill }: { bill: Bill }) {
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
+  const restoreMutation = useRestoreBill();
+  const deleteMutation = useDeleteBill();
+
+  return (
+    <li className="px-4 py-4">
+      <p className="font-medium text-chill-text">{bill.name}</p>
+      <p className="text-xs text-chill-text-muted mt-0.5">
+        Due {formatOrdinal(bill.dueDayOfMonth)} · Archived{' '}
+        {formatArchiveDate(bill.updatedAt)}
+      </p>
+      <div className="mt-2 flex justify-end gap-1">
+        <Button
+          variant="default"
+          size="sm"
+          disabled={restoreMutation.isPending}
+          onClick={() => restoreMutation.mutate(bill.id)}
+        >
+          Restore
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-red-600 hover:bg-red-50 hover:text-red-700"
+          onClick={() => setDeleteOpen(true)}
+        >
+          Delete
+        </Button>
+        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Permanently delete {bill.name}?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This will also delete all of its payment history. This cannot be
+                undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  deleteMutation.mutate(bill.id);
+                  setDeleteOpen(false);
+                }}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </li>
   );
 }
 
