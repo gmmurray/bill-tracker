@@ -93,3 +93,10 @@ export const updateBillInstanceSchema = z.object({
 export const instanceIdSchema = z.object({
   instanceId: z.uuid(),
 });
+
+export const bulkAssignBillsSchema = z.object({
+  scheduleId: z.uuid().nullable(),
+  billIds: z.array(z.uuid()).min(1).max(200),
+});
+
+export type BulkAssignBillsInput = z.infer<typeof bulkAssignBillsSchema>;

@@ -5,6 +5,7 @@ import {
   desc,
   eq,
   getTableColumns,
+  inArray,
   isNull,
   like,
   sql,
@@ -18,6 +19,7 @@ import {
   type Bill,
   type BillInstance,
   billIdSchema,
+  bulkAssignBillsSchema,
   createBillSchema,
   getBillDetailSchema,
   instanceIdSchema,
@@ -387,4 +389,33 @@ export const deleteBill = createServerFn({ method: 'POST' })
     await db
       .delete(bills)
       .where(and(eq(bills.id, data.billId), eq(bills.userId, userId)));
+  });
+
+export const bulkAssignBills = createServerFn({ method: 'POST' })
+  .validator(bulkAssignBillsSchema)
+  .handler(async ({ data }) => {
+    const userId = await getAuthUserId();
+    const db = getDb();
+
+    if (data.scheduleId !== null) {
+      const [schedule] = await db
+        .select({ id: paySchedules.id })
+        .from(paySchedules)
+        .where(
+          and(
+            eq(paySchedules.id, data.scheduleId),
+            eq(paySchedules.userId, userId),
+            eq(paySchedules.isActive, true),
+          ),
+        );
+      if (!schedule) throw new NotFoundError('Pay schedule not found');
+    }
+
+    const updated = await db
+      .update(bills)
+      .set({ payScheduleId: data.scheduleId })
+      .where(and(inArray(bills.id, data.billIds), eq(bills.userId, userId)))
+      .returning({ id: bills.id });
+
+    return { updatedCount: updated.length };
   });

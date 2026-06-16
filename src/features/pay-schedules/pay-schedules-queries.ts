@@ -172,6 +172,10 @@ export function useArchivePaySchedule() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: payScheduleKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: payScheduleKeys.archived() });
+      queryClient.invalidateQueries({
+        queryKey: payScheduleKeys.archivedCount(),
+      });
     },
   });
 }

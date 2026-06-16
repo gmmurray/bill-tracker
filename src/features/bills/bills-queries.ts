@@ -5,12 +5,14 @@ import type {
   Bill,
   BillListFilters,
   BillWithSchedule,
+  BulkAssignBillsInput,
   CreateBillInput,
   LogHistoricalPaymentInput,
   UpdateBillInput,
 } from './bills-model';
 import {
   archiveBill,
+  bulkAssignBills,
   createBill,
   deleteBill,
   deleteBillInstance,
@@ -247,6 +249,23 @@ export function useRestoreBill() {
     },
     onError: err => {
       toast.error(getErrorMessage(err, 'Failed to restore bill'));
+    },
+  });
+}
+
+export function useBulkAssignBills() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: BulkAssignBillsInput) =>
+      bulkAssignBills({ data: input }),
+    onSuccess: data => {
+      toast.success(
+        `${data.updatedCount} bill${data.updatedCount === 1 ? '' : 's'} assigned`,
+      );
+      queryClient.invalidateQueries({ queryKey: billKeys.lists() });
+    },
+    onError: err => {
+      toast.error(getErrorMessage(err, 'Failed to assign bills'));
     },
   });
 }
