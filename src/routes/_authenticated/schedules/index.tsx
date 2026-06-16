@@ -35,7 +35,7 @@ import {
   ResponsiveDrawerTitle,
 } from '#/components/ui/responsive-drawer';
 import { Switch } from '#/components/ui/switch';
-import { formatCurrency } from '#/features/bills/bills-helpers';
+import { formatCurrency, formatOrdinal } from '#/features/bills/bills-helpers';
 import type { BillWithSchedule } from '#/features/bills/bills-model';
 import {
   billsQueryOptions,
@@ -68,12 +68,6 @@ export const Route = createFileRoute('/_authenticated/schedules/')({
     ]),
   component: SchedulesPage,
 });
-
-function formatOrdinal(n: number): string {
-  const s = ['th', 'st', 'nd', 'rd'];
-  const v = n % 100;
-  return n + (s[(v - 20) % 10] ?? s[v] ?? s[0]);
-}
 
 const DotsButton = React.forwardRef<
   HTMLButtonElement,

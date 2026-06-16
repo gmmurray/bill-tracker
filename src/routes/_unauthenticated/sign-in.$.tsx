@@ -1,7 +1,11 @@
 import { SignIn } from '@clerk/tanstack-react-start';
 import { createFileRoute } from '@tanstack/react-router';
+import { z } from 'zod';
 
 export const Route = createFileRoute('/_unauthenticated/sign-in/$')({
+  validateSearch: z.object({
+    redirect_url: z.string().optional(),
+  }),
   component: Page,
 });
 

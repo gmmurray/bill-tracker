@@ -9,12 +9,16 @@ import {
 } from '@tanstack/react-router';
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 import { Toaster } from 'sonner';
+import { z } from 'zod';
 import NotFound from '#/components/not-found';
 import { RouterProgress } from '#/components/router-progress';
 import appCss from '../styles.css?url';
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   {
+    validateSearch: z.object({
+      actions: z.boolean().optional().catch(false),
+    }),
     head: () => ({
       meta: [
         {
@@ -73,7 +77,7 @@ function RootComponent() {
       <Outlet />
       <Toaster
         richColors
-        position="top-right"
+        position="bottom-right"
         closeButton
         toastOptions={{
           classNames: {

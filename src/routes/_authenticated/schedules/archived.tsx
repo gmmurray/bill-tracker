@@ -12,6 +12,7 @@ import {
 } from '#/components/ui/alert-dialog';
 import { Button } from '#/components/ui/button';
 import { Card } from '#/components/ui/card';
+import { formatOrdinal } from '#/features/bills/bills-helpers';
 import type { PaySchedule } from '#/features/pay-schedules/pay-schedules-model';
 import {
   archivedPaySchedulesCountQueryOptions,
@@ -226,10 +227,4 @@ function formatArchiveDate(isoDatetime: string) {
     day: 'numeric',
     year: 'numeric',
   });
-}
-
-function formatOrdinal(n: number): string {
-  const s = ['th', 'st', 'nd', 'rd'];
-  const v = n % 100;
-  return n + (s[(v - 20) % 10] ?? s[v] ?? s[0]);
 }
