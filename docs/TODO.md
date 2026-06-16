@@ -6,7 +6,8 @@
 
 ## UI / UX
 
-- [ ] Global navigation progress bar — fake indeterminate bar, 200ms delay before showing, tied to `useRouterState` pending status
+- [ ] **Router-driven loading refactor** — bundle the global progress bar with a sweep to move per-route data fetching into TanStack Router loaders (`queryClient.ensureQueryData`). Single source of truth for "navigating": fake indeterminate bar, 200ms delay before showing, tied to `useRouterState({ select: s => s.status })`. With loaders pre-warming the cache, every `if (isLoading) return "Loading..."` block on a loader-backed route becomes dead code and should be removed in the same pass. Empty states and mutation `isPending` blocks stay as-is — `isLoading` is `isPending && !hasData` so it only fires on truly uncached queries, which loaders eliminate.
+- [ ] **Mobile table pass** — bills/index, bills/archived, schedules/archived tables get cut off below `md`. Switch to stacked card rows at `<md` (table at `md+`).
 
 ## Features to Build
 
