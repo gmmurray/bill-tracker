@@ -29,6 +29,9 @@
 - [x] **Bill detail page** — [bills/$billId.tsx](src/routes/_authenticated/bills/$billId.tsx)
 - [x] **Bills archive page** — [bills/archived.tsx](src/routes/_authenticated/bills/archived.tsx)
 - [ ] Dashboard page (JIT state derivation, 3-row hierarchy)
+- [ ] Dashboard — small celebratory donut animation on payment (snapshot widgets in Row 2 animate the fill increment when a `bill_instance` is recorded)
+- [ ] Bill Actions drawer — empty state illustration (drawer reads `"You're all caught up."` when both sections are empty; design something simple to reinforce the moment)
+- [ ] Bill Actions nav button — pick the icon and define the active/inactive treatment (currently spec'd as "outlined → filled with peach background" but the icon itself is TBD; needs a design pass before build)
 - [ ] create bill - "add another" check box
 - [ ] create bill - consider including more fields in the "quick add" ui
 - [ ] "anchor" day/date rename in ui since it might feel unclear for users.

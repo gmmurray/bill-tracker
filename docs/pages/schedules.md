@@ -176,6 +176,4 @@ Restructure mirrors the bills routes.
 
 ## Future Considerations
 
-- **Drag-and-drop assignment** — deferred. The `⋯` menus + bulk assign sheet cover the workflow. Revisit only if usage proves the menus are too clunky.
-- **Bulk operations endpoint** — `bulkAssignBills` server function to replace the loop in the bulk assign flow. Defer until performance warrants it.
-- **Aggregate placement decision** — header vs footer vs both. Pick one after using the page for a few weeks.
+Captured centrally in [../future.md](../future.md) under the **Schedules Page** section.

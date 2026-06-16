@@ -21,18 +21,17 @@ Four full-width rows, top to bottom. Some rows hide entirely when empty.
 
 `h1` reads `"Today, {weekday, month day}"` (e.g. `"Today, Wednesday, June 15"`). Anchors the user temporally and makes the JIT state decisions feel less abstract.
 
-### Row 1 — Critical Alerts
+### Row 1 — Attention Banner
 
 Full width. **Collapses entirely when empty.**
 
-Surfaces bills in trouble:
+A single-line banner — not a bill list. The actual list of attention-needing items lives in the global Bill Actions drawer (see [actions.md](actions.md)); this banner just nudges the user toward it.
 
-- All `OVERDUE` bills (regardless of schedule assignment, including orphans)
-- All `MISSED_SCHEDULE` bills **whose schedule is not the next-upcoming active schedule** (i.e., schedules that have already passed in the current cycle but whose bills weren't paid)
+Content: `"{N} bill{s} need your attention"` + a `Review →` button that opens the Bill Actions drawer (sets the root search param `?actions=true`).
 
-Bills `MISSED_SCHEDULE` on the next-upcoming active schedule are intentionally **excluded** here — they live in Row 3 with amber highlighting. Row 1 is the "you have to act on these or things break" pane; Row 3 is the work surface for the current pay session.
+`N` is the count of bills that are `OVERDUE` ∪ `MISSED_SCHEDULE` where the bill's schedule is not the active session.
 
-Rendered as a `<Card>` with `bg-chill-peach border-chill-peach-border`. Each row shows: bill name, ordinal due day, expected amount, **Pay** button. Clicking the bill name navigates to detail.
+Styling: `bg-chill-peach border border-chill-peach-border` card with the text + button inline. Keep it visually quiet — this is a notification, not a panel.
 
 ### Row 2 — Monthly Snapshots (50% / 50%)
 
@@ -56,27 +55,43 @@ Both metrics are **calendar-month-scoped**: a `bill_instance` "counts toward" th
 
 `paidCount` is the number of bills with a current-month instance. `paidDollars` is `sum(amountActual)` over those instances.
 
-### Row 3 — Active Schedule Checklist
+### Row 3 — Active Session Checklist
 
 Full width.
 
-Shows **all bills tied to the next-upcoming active pay schedule** — paid, unpaid, overdue, missed, all of them. Not just unpaid. Rationale: users want visual confirmation that nothing is missing from their checklist, which only works if the whole set is on screen.
+Shows **all bills tied to the active pay session's schedule** — paid, unpaid, overdue, missed, all of them. Not just unpaid. Rationale: users want visual confirmation that nothing is missing from their checklist, which only works if the whole set is on screen.
 
-**Selecting the "next-upcoming" schedule:**
+**Selecting the active schedule (earliest unfinished session rule):**
 
-- Filter active schedules to those whose `anchorDay >= today.getDate()` in the current month
-- Sort by `anchorDay` ascending, then `name` ascending (tie-break)
-- Pick the first
-- If none qualify (all anchor days for the current month have passed), wrap to next month: smallest `anchorDay`, ties by name
+For each active schedule, compute `currentSession`:
 
-Card header: `"Next Pay Session — {schedule.name} ({formatOrdinal(schedule.anchorDay)})"`.
+- If any bill on the schedule has an unpaid target cycle (see "session-relative payment state" below) → `currentSession` = the most recent past anchor occurrence
+- Else → `currentSession` = the next future anchor occurrence
 
-Each bill row:
+Active schedule = the one with the earliest `currentSession` date. Ties broken by `anchorDay` ascending, then `name` ascending.
+
+This rule means: if you're mid-session on schedule A and the next schedule B's anchor day has technically arrived, schedule A stays in Row 3 until you finish it. Schedule B's bills wait their turn. Sessions queue up chronologically instead of fragmenting between rows when calendar anchors pass.
+
+Card header: `"Pay Session — {schedule.name} ({formatOrdinal(schedule.anchorDay)})"`.
+
+**Session-relative payment state.**
+
+For each bill in the checklist, the "is this paid" question is about the *target cycle for this session*, not the most recent past calendar cycle. Compute per bill:
+
+```
+targetDueDate = computeNearestUnpaidDueDate(bill.dueDayOfMonth, instances, today)
+```
+
+The checkbox is filled iff an instance exists for `targetDueDate`. Since `nearestUnpaidDueDate` returns the first cycle without an instance, the checkbox is effectively always empty until the user pays — at which point a new instance is created for `targetDueDate` and the next call returns the cycle after that.
+
+This makes pay-ahead workflows work: bill due 1st on a schedule anchored 15th, paying on Feb 15 for the March 1 cycle. The dashboard Pay dialog shows `"Applying to: 2026-03-01"` regardless of where the calendar happens to fall.
+
+**State styling per bill row** (uses calendar-relative state from `deriveBillState` for visual cues only — actionability is session-relative as above):
 
 | Element | Behavior |
 |---|---|
-| Checkbox | Filled when state is `PAID`. Empty otherwise. Clicking an empty box opens the Pay confirmation dialog. Clicking a filled box does nothing (corrections go through bill detail). |
-| Bill name | Click navigates to detail. Strike-through when `PAID`. |
+| Checkbox | Filled iff an instance exists for `targetDueDate`. Clicking an empty box opens the Pay confirmation dialog. Clicking a filled box does nothing (corrections go through bill detail). |
+| Bill name | Click navigates to detail. Strike-through when checkbox is filled. |
 | Day | Ordinal `dueDayOfMonth`, muted. |
 | Amount | `formatCurrency(amountExpected)`. Right-aligned, tabular. |
 | Auto indicator | If `isAutoPay`, render the existing teal check icon next to the amount. Bills still need to be marked paid the same way — auto-pay is purely informational. |
@@ -93,17 +108,19 @@ Each bill row:
 - *No active schedules at all* → `"No active pay schedules. Create one to start a pay session."` with a link to `/schedules`
 - *Active schedules exist but every bill on the next-upcoming is `PAID`* → `"All caught up for {schedule.name}!"`
 
-### Row 4 — Master Timeline
+### Row 4 — Upcoming Preview
 
 Full width.
 
-A simple, complete list of every **`UPCOMING`** bill, sorted by `dueDayOfMonth` ascending. Includes bills assigned to any schedule (including the active one — intentional duplication with Row 3 as a reference list), plus unassigned and orphaned bills.
+A **preview** of upcoming bills — the first 7 `UPCOMING` bills sorted by `dueDayOfMonth` ascending. Scoped to the current calendar month.
 
-No schedule filtering. No assumptions about pay schedules — a user without any schedules still sees a useful timeline here.
+Includes bills assigned to any schedule (including the active one — intentional, this is a reference list), plus unassigned and orphaned bills.
 
-Columns: `Day | Bill | Amount | Pay`. Same Pay button → same confirmation dialog. Click bill name navigates to detail.
+Columns: `Day | Bill | Amount | Pay`. Same Pay button → same confirmation dialog as Row 3. Click bill name navigates to detail.
 
-Empty state: `"No upcoming bills."`
+Footer link: `"See all upcoming →"` opens the Bill Actions drawer (`?actions=true`).
+
+Empty state: hide the preview entirely if there are no upcoming bills this month. The drawer surface handles the empty-app case.
 
 ---
 
@@ -143,16 +160,18 @@ All from existing hooks — no new server functions.
 In-memory derivation:
 
 1. Build `instancesByBillId: Map<string, BillInstance[]>` once
-2. For each bill, compute `deriveBillState(bill, schedule, instancesByBillId.get(bill.id) ?? [], today)`
-3. Partition into the four row buckets
+2. For each schedule, compute its `currentSession` (using the rule in Row 3)
+3. Pick the active schedule by earliest `currentSession`
+4. For each bill, compute calendar-relative state via `deriveBillState(bill, schedule, instances, today)` for visual styling
+5. For bills on the active schedule, compute session-relative `targetDueDate` and a `targetIsPaid` flag
 
 Group bills into:
 
-- `alerts`: bills where state is `OVERDUE`, plus bills where state is `MISSED_SCHEDULE` and the bill's schedule is *not* the next-upcoming
-- `activeChecklist`: bills where `payScheduleId === nextUpcoming.id` (all states)
-- `timeline`: bills where state is `UPCOMING`
+- `attentionCount` (for Row 1 banner): bills where state is `OVERDUE`, plus bills where state is `MISSED_SCHEDULE` and the bill's schedule is *not* the active schedule. Just a count — the full list lives in the action drawer.
+- `activeChecklist`: bills where `payScheduleId === activeSchedule.id` (all states). Each rendered with calendar-state styling + session-state checkbox.
+- `upcomingPreview`: bills with state `UPCOMING` and `dueDayOfMonth` falling on or after today within the current calendar month, sliced to the first 7.
 
-A bill assigned to the next-upcoming schedule that is OVERDUE will appear in both Row 1 (alert) and Row 3 (active checklist with peach highlight). Intentional.
+A bill assigned to the active schedule that is OVERDUE will count toward the Row 1 attention banner *and* appear in Row 3 (with peach row highlight) *and* in the drawer's Needs Attention section. Intentional — the user can act from whichever surface they're looking at.
 
 ---
 
@@ -211,25 +230,6 @@ loader: ({ context }) =>
 
 ---
 
-## CLAUDE.md edits needed
-
-Once the dashboard is built, these CLAUDE.md sections should be reconciled with what we actually built:
-
-1. **Row 2 → now its own row** at 50/50 (snapshots), with the active checklist promoted to its own full-width row (Row 3). CLAUDE.md currently has the snapshot panel as a 1/3-width sidebar in row 2.
-2. **Two snapshot metrics, not one.** Bill count progress AND dollar burndown — both useful, one isn't a replacement for the other.
-3. **"No gamification" line stays.** The metrics are utilitarian (count of remaining tasks, dollar burndown), not progress-bar dopamine.
-4. **Auto-pay handling needs a paragraph** added — currently CLAUDE.md mentions `isAutoPay` exists in the schema but doesn't say how the dashboard treats it. Decision: informational only.
-5. **Pay confirmation dialog needs spec** — applied date is read-only, amount editable, no historical override (use bill detail for that).
-6. **"Active schedule" selection rule** — anchorDay ascending, name ascending tie-break, wrap to next month if no current-month anchor matches.
-7. **Checklist behavior on PAID rows** — show as checked + struck-through, inert (no un-check from the dashboard).
-8. **Row 1 inclusion rule** — explicitly state it's `OVERDUE ∪ MISSED_SCHEDULE-where-schedule-is-not-next-upcoming`. The "past schedules that slipped through" wording is too vague.
-9. **`MISSED_SCHEDULE` collapsing when `anchorDay == dueDayOfMonth`** — note that this is intentional, not a bug. OVERDUE is the meaningful state when anchor and due coincide.
-
----
-
 ## Future Considerations
 
-- **Drag-and-drop to mark paid** — deferred; checkbox click is direct enough
-- **Donut animation on payment** — small celebratory tick; nice but not required
-- **Aggregate "amount due today" widget** — a third snapshot if we find the existing two leave a gap during use
-- **Multi-month view / forecast** — explicitly out of scope, JIT paradigm doesn't model the future
+Captured centrally in [../future.md](../future.md) under the **Dashboard** section.
