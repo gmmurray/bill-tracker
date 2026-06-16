@@ -393,7 +393,7 @@ function UnassignedCard({
     <Card>
       <CardHeader>
         <p className="font-semibold text-chill-text">
-          Unassigned ({bills.length})
+          Unassigned Bills ({bills.length})
         </p>
       </CardHeader>
 
