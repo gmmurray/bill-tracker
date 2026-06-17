@@ -37,3 +37,8 @@
 - [ ] "anchor" day/date rename in ui since it might feel unclear for users.
 - [ ] related to above: could probably include some helper text across the app
 - [ ] replace one-off svgs with react-icons (feather)
+- [ ] dashboard updates
+  - [ ] auto incidator as checkmark is unclear - need different icon
+  - [ ] should probably leave upcoming bills that are paid (row 4) as checked off when paid. otherwise they kind of disappear completely. it feels important to know what has been taken care of at a glance vs paid stuff disappearing completely
+  - [ ] active schedule - probably dont need to show check box AND pay button. honestly im possibly open to discarding the checkbox entirely since we arent allowing user to uncheck anyway.
+  - [ ] somewhat unclear the states in active schedule section at a glance. bills that need attention have colored background. paid bills have no background and disabled state. some bills have yellowish background, and some of those have a left border. also, sometimes you have unpaid / overdue bills, then a paid bill, then more unpaid bills. i think we should probably group the paid bils in the active schedule by paid at the top, then date within those, then unpaid by date. i could see arguents for having paid at top or bottom - top means youre working down a list, bottom means the focus is on the first item in the list which would always be something that needs to be paid
