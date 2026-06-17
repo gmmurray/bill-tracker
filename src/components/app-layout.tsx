@@ -2,6 +2,7 @@ import { UserButton } from '@clerk/tanstack-react-start';
 import { Link } from '@tanstack/react-router';
 import type { PropsWithChildren } from 'react';
 import * as React from 'react';
+import { AttentionBanner } from '#/components/attention-banner';
 import { BillActionsNavButton } from '#/components/bill-actions-nav-button';
 
 export default function AppLayout({ children }: PropsWithChildren) {
@@ -48,6 +49,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
           <BillActionsNavButton />
         </header>
 
+        <AttentionBanner />
         <main className="flex-1 overflow-auto">{children}</main>
       </div>
     </div>

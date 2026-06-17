@@ -164,11 +164,15 @@ export function useArchiveBill() {
   });
 }
 
-export function useCurrentMonthInstances() {
-  return useQuery({
+export function currentMonthInstancesQueryOptions() {
+  return queryOptions({
     queryKey: billKeys.currentMonthInstances(),
     queryFn: () => listCurrentMonthInstances(),
   });
+}
+
+export function useCurrentMonthInstances() {
+  return useQuery(currentMonthInstancesQueryOptions());
 }
 
 export function useRecordBillPayment() {

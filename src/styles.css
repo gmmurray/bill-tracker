@@ -106,3 +106,9 @@
   --animate-slide-in-from-right: slide-in-from-right 0.3s ease;
   --animate-slide-out-to-right: slide-out-to-right 0.3s ease forwards;
 }
+
+@layer base {
+  button {
+    @apply hover:cursor-pointer;
+  }
+}

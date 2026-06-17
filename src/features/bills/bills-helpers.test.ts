@@ -7,6 +7,7 @@ import {
   formatOrdinal,
   isScheduleSessionComplete,
   mostRecentPastSession,
+  msUntilNextMidnight,
   nextFutureSession,
   selectActiveSchedule,
   targetDueDateForSession,
@@ -526,5 +527,37 @@ describe('selectActiveSchedule', () => {
     ]);
     const result = selectActiveSchedule([sA, sB], [billA, billB], map, today);
     expect(result?.id).toBe('sA');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// msUntilNextMidnight
+// ---------------------------------------------------------------------------
+
+describe('msUntilNextMidnight', () => {
+  it('returns 86400000 when now is exactly midnight', () => {
+    const midnight = new Date(2026, 5, 16, 0, 0, 0, 0);
+    expect(msUntilNextMidnight(midnight)).toBe(86_400_000);
+  });
+
+  it('returns 3600000 when now is 23:00 local', () => {
+    const elevenPm = new Date(2026, 5, 16, 23, 0, 0, 0);
+    expect(msUntilNextMidnight(elevenPm)).toBe(3_600_000);
+  });
+
+  it('returns less than 86400000 for any non-midnight time', () => {
+    const afternoon = new Date(2026, 5, 16, 14, 30, 0, 0);
+    expect(msUntilNextMidnight(afternoon)).toBeLessThan(86_400_000);
+  });
+
+  it('always returns a positive number', () => {
+    const times = [
+      new Date(2026, 5, 16, 0, 0, 0, 0),
+      new Date(2026, 5, 16, 12, 0, 0, 0),
+      new Date(2026, 5, 16, 23, 59, 59, 999),
+    ];
+    for (const t of times) {
+      expect(msUntilNextMidnight(t)).toBeGreaterThan(0);
+    }
   });
 });

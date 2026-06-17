@@ -14,6 +14,7 @@ import {
   clampDayToMonth,
   deriveBillState,
   formatOrdinal,
+  msUntilNextMidnight,
   selectActiveSchedule,
 } from '#/features/bills/bills-helpers';
 import type {
@@ -40,6 +41,7 @@ type UpcomingEntry = {
 };
 
 export type BillActionsState = {
+  today: Date;
   attention: AttentionEntry[];
   upcoming: UpcomingEntry[];
   attentionCount: number;
@@ -57,8 +59,17 @@ export function BillActionsProvider({
   const schedulesQuery = usePaySchedules();
   const instancesQuery = useCurrentMonthInstances();
 
+  const [today, setToday] = React.useState(() => new Date());
+
+  React.useEffect(() => {
+    const t = setTimeout(
+      () => setToday(new Date()),
+      msUntilNextMidnight(today),
+    );
+    return () => clearTimeout(t);
+  }, [today]);
+
   const value = React.useMemo<BillActionsState>(() => {
-    const today = new Date();
     const bills = billsQuery.data ?? [];
     const schedules = schedulesQuery.data ?? [];
     const allInstances = instancesQuery.data ?? [];
@@ -125,12 +136,13 @@ export function BillActionsProvider({
     upcoming.sort((a, b) => a.bill.dueDayOfMonth - b.bill.dueDayOfMonth);
 
     return {
+      today,
       attention,
       upcoming,
       attentionCount: attention.length,
       instancesByBillId,
     };
-  }, [billsQuery.data, schedulesQuery.data, instancesQuery.data]);
+  }, [billsQuery.data, schedulesQuery.data, instancesQuery.data, today]);
 
   return (
     <BillActionsContext.Provider value={value}>

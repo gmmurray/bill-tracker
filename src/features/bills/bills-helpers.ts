@@ -159,6 +159,12 @@ export function isScheduleSessionComplete(
   return true;
 }
 
+export function msUntilNextMidnight(now: Date): number {
+  const next = new Date(now);
+  next.setHours(24, 0, 0, 0);
+  return next.getTime() - now.getTime();
+}
+
 export function selectActiveSchedule(
   schedules: PaySchedule[],
   bills: Pick<Bill, 'id' | 'dueDayOfMonth' | 'payScheduleId'>[],
