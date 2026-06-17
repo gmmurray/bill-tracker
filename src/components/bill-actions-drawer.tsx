@@ -202,7 +202,7 @@ export function BillActionsDrawer() {
             <ResponsiveDrawerClose
               className={cn(
                 'rounded-md p-1.5 text-chill-text-muted transition-colors',
-                'hover:bg-chill-purple-light hover:text-chill-text',
+                'hover:bg-chill-purple-light hover:text-chill-text hover:cursor-pointer',
                 'focus:outline-none focus:ring-2 focus:ring-chill-teal',
               )}
               aria-label="Close"

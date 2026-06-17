@@ -36,3 +36,4 @@
 - [ ] create bill - consider including more fields in the "quick add" ui
 - [ ] "anchor" day/date rename in ui since it might feel unclear for users.
 - [ ] related to above: could probably include some helper text across the app
+- [ ] replace one-off svgs with react-icons (feather)

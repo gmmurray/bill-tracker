@@ -31,20 +31,21 @@ export default function AppLayout({ children }: PropsWithChildren) {
 
       {/* Content column */}
       <div className="flex flex-col flex-1 min-w-0 overflow-auto">
-        {/* Mobile top bar */}
-        <header className="lg:hidden flex items-center gap-3 px-4 py-4 bg-chill-surface border-b border-chill-border shrink-0">
+        {/* Top bar — both breakpoints */}
+        <header className="flex items-center gap-3 px-4 py-4 bg-chill-surface border-b border-chill-border shrink-0">
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="p-1 rounded-md text-chill-text-muted hover:bg-chill-purple-light transition-colors"
+            className="lg:hidden p-1 rounded-md text-chill-text-muted hover:bg-chill-purple-light transition-colors"
             aria-label="Open menu"
           >
             <HamburgerIcon />
           </button>
-          <span className="flex-1 font-semibold text-xl tracking-tight text-center">
+          <span className="lg:hidden flex-1 font-semibold text-xl tracking-tight text-center">
             Bill<span className="text-chill-ice">Chill.</span>
           </span>
-          <BillActionsNavButton variant="topbar" />
+          <div className="hidden lg:block flex-1" />
+          <BillActionsNavButton />
         </header>
 
         <main className="flex-1 overflow-auto">{children}</main>
@@ -72,7 +73,6 @@ function SidebarContents({ onLinkClick }: { onLinkClick?: () => void }) {
         <NavLink to="/schedules" icon={<SchedulesIcon />} onClick={onLinkClick}>
           Schedules
         </NavLink>
-        <BillActionsNavButton variant="sidebar" />
       </nav>
 
       <div className="pt-4 border-t border-chill-border">
