@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import * as React from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { PayBillDialog } from '#/components/pay-bill-dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -106,6 +107,7 @@ function BillDetailPage() {
   const navigate = useNavigate({ from: Route.fullPath });
   const archiveBillMutation = useArchiveBill();
   const [logDrawerOpen, setLogDrawerOpen] = React.useState(false);
+  const [payNowOpen, setPayNowOpen] = React.useState(false);
 
   const billDetailQuery = useBillDetail(billId, page, 10);
 
@@ -160,6 +162,7 @@ function BillDetailPage() {
             navigate({ search: prev => ({ ...prev, page: newPage }) })
           }
           onLogHistoricalPayment={() => setLogDrawerOpen(true)}
+          onPayNow={() => setPayNowOpen(true)}
         />
       </div>
 
@@ -167,6 +170,13 @@ function BillDetailPage() {
         billId={billId}
         open={logDrawerOpen}
         onOpenChange={setLogDrawerOpen}
+      />
+
+      <PayBillDialog
+        bill={bill}
+        instances={bill.instances}
+        open={payNowOpen}
+        onOpenChange={setPayNowOpen}
       />
     </div>
   );
@@ -528,11 +538,13 @@ function LedgerSection({
   page,
   onPageChange,
   onLogHistoricalPayment,
+  onPayNow,
 }: {
   bill: BillDetail;
   page: number;
   onPageChange: (page: number) => void;
   onLogHistoricalPayment: () => void;
+  onPayNow: () => void;
 }) {
   const totalPages = Math.max(
     1,
@@ -548,9 +560,14 @@ function LedgerSection({
         <h2 className="text-base font-semibold text-chill-text">
           Payment History
         </h2>
-        <Button variant="default" size="sm" onClick={onLogHistoricalPayment}>
-          + Log Historical Payment
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="default" size="sm" onClick={onLogHistoricalPayment}>
+            + Log Historical Payment
+          </Button>
+          <Button variant="pay" size="sm" onClick={onPayNow}>
+            Pay Now
+          </Button>
+        </div>
       </CardHeader>
 
       <CardBody>

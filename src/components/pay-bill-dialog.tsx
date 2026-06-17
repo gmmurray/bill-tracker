@@ -4,6 +4,7 @@ import {
   AlertDialog,
   AlertDialogCancel,
   AlertDialogContent,
+  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -33,6 +34,16 @@ function formatDueDate(isoDate: string) {
   });
 }
 
+function formatPaidAt(date: Date) {
+  return date.toLocaleString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
 export function PayBillDialog({ bill, instances, open, onOpenChange }: Props) {
   const recordPayment = useRecordBillPayment();
   const [conflictError, setConflictError] = React.useState<string | null>(null);
@@ -42,6 +53,8 @@ export function PayBillDialog({ bill, instances, open, onOpenChange }: Props) {
       computeNearestUnpaidDueDate(bill.dueDayOfMonth, instances, new Date()),
     [bill.dueDayOfMonth, instances],
   );
+
+  const [recordedAt, setRecordedAt] = React.useState(() => new Date());
 
   const {
     register,
@@ -55,6 +68,7 @@ export function PayBillDialog({ bill, instances, open, onOpenChange }: Props) {
   React.useEffect(() => {
     if (open) {
       setConflictError(null);
+      setRecordedAt(new Date());
       reset({ amountDollars: (bill.amountExpected / 100).toFixed(2) });
     }
   }, [open, bill.amountExpected, reset]);
@@ -77,6 +91,9 @@ export function PayBillDialog({ bill, instances, open, onOpenChange }: Props) {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Mark {bill.name} as paid</AlertDialogTitle>
+          <AlertDialogDescription>
+            Confirm the cycle this payment applies to and the amount recorded.
+          </AlertDialogDescription>
         </AlertDialogHeader>
 
         <form
@@ -84,12 +101,20 @@ export function PayBillDialog({ bill, instances, open, onOpenChange }: Props) {
           onSubmit={handleSubmit(onSubmit)}
           className="flex flex-col gap-4 py-2"
         >
-          <p className="text-sm text-chill-text-muted">
-            Applying to:{' '}
-            <span className="font-medium text-chill-text">
-              {formatDueDate(targetDueDate)}
-            </span>
-          </p>
+          <div className="flex flex-col gap-1 text-sm text-chill-text-muted">
+            <p>
+              Applying to:{' '}
+              <span className="font-medium text-chill-text">
+                {formatDueDate(targetDueDate)}
+              </span>
+            </p>
+            <p>
+              Recorded:{' '}
+              <span className="font-medium text-chill-text">
+                {formatPaidAt(recordedAt)}
+              </span>
+            </p>
+          </div>
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="pay-amount">Amount paid</Label>

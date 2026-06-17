@@ -33,6 +33,8 @@ Content: `"{N} bill{s} need your attention"` + a `Review →` button that opens 
 
 Styling: `bg-chill-peach border border-chill-peach-border` card with the text + button inline. Keep it visually quiet — this is a notification, not a panel.
 
+**Promote to app-wide during this build.** The attention banner shouldn't only live on the dashboard — if the conditions for it are met, the user should see it on any authenticated route. Implementation: hoist the banner into `_authenticated.tsx` (or `AppLayout`) and render it when `attentionCount > 0`. The `BillActionsProvider` already supplies the count app-wide. The dashboard-specific Row 1 slot then becomes "this banner happens to render at the top of the dashboard because it renders at the top of every authenticated route" — no dashboard-specific rendering needed.
+
 ### Row 2 — Monthly Snapshots (50% / 50%)
 
 Two side-by-side `<Card>`s. Always rendered, never hides — these are the user's at-a-glance budget pulse for the month.
