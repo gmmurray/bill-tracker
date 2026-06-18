@@ -15,7 +15,7 @@ export interface ButtonProps
 const variantClasses: Record<ButtonVariant, string> = {
   default: 'border border-chill-border bg-chill-surface hover:bg-chill-purple',
   primary: 'bg-chill-teal text-chill-text hover:opacity-90 transition-opacity',
-  pay: 'bg-chill-mint text-chill-text hover:bg-chill-mint-hover',
+  pay: 'bg-chill-purple-light text-chill-text hover:bg-chill-purple',
   ghost: 'hover:bg-chill-surface',
 };
 

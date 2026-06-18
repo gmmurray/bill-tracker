@@ -1,6 +1,6 @@
-import { ClerkProvider } from '@clerk/tanstack-react-start';
+import { ClerkProvider, useAuth } from '@clerk/tanstack-react-start';
 import { TanStackDevtools } from '@tanstack/react-devtools';
-import type { QueryClient } from '@tanstack/react-query';
+import { type QueryClient, useQueryClient } from '@tanstack/react-query';
 import {
   createRootRouteWithContext,
   HeadContent,
@@ -8,6 +8,7 @@ import {
   Scripts,
 } from '@tanstack/react-router';
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
+import * as React from 'react';
 import { Toaster } from 'sonner';
 import { z } from 'zod';
 import NotFound from '#/components/not-found';
@@ -70,9 +71,28 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   );
 }
 
+function AuthCacheWatcher() {
+  const { userId } = useAuth();
+  const queryClient = useQueryClient();
+  const lastUserIdRef = React.useRef<string | null | undefined>(userId);
+
+  React.useEffect(() => {
+    if (
+      lastUserIdRef.current !== undefined &&
+      userId !== lastUserIdRef.current
+    ) {
+      queryClient.clear();
+    }
+    lastUserIdRef.current = userId;
+  }, [userId, queryClient]);
+
+  return null;
+}
+
 function RootComponent() {
   return (
     <ClerkProvider>
+      <AuthCacheWatcher />
       <RouterProgress />
       <Outlet />
       <Toaster

@@ -15,6 +15,10 @@ export function formatOrdinal(n: number): string {
   return n + (s[(v - 20) % 10] ?? s[v] ?? s[0]!);
 }
 
+export function formatDueLabel(dayOfMonth: number): string {
+  return `Due the ${formatOrdinal(dayOfMonth)}`;
+}
+
 export function clampDayToMonth(
   day: number,
   year: number,

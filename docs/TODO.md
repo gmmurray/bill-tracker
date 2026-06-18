@@ -37,11 +37,14 @@
 - [ ] "anchor" day/date rename in ui since it might feel unclear for users.
 - [ ] related to above: could probably include some helper text across the app
 - [ ] replace one-off svgs with react-icons (feather)
-- [ ] dashboard updates
-  - [ ] log in existing user with an active schedule - dashboard loads with no active schedule. refresh page, loads as expected.
-  - [ ] auto indicator as checkmark is unclear - need different icon
-  - [ ] should probably leave upcoming bills that are paid (row 4) as checked off when paid. otherwise they kind of disappear completely. it feels important to know what has been taken care of at a glance vs paid stuff disappearing completely
-  - [ ] active schedule - probably dont need to show check box AND pay button. honestly im possibly open to discarding the checkbox entirely since we arent allowing user to uncheck anyway.
-  - [ ] somewhat unclear the states in active schedule section at a glance. bills that need attention have colored background. paid bills have no background and disabled state. some bills have yellowish background, and some of those have a left border. also, sometimes you have unpaid / overdue bills, then a paid bill, then more unpaid bills. i think we should probably group the paid bils in the active schedule by paid at the top, then date within those, then unpaid by date. i could see arguents for having paid at top or bottom - top means youre working down a list, bottom means the focus is on the first item in the list which would always be something that needs to be paid
+- [ ] **Dashboard updates**
+  - [x] **User-switch cache flash** — sign out + sign in as a different user briefly flashed the previous user's cached data. Fixed via `AuthCacheWatcher` in `__root.tsx` that clears the query cache when Clerk's `userId` changes.
+  - [ ] **Stale state after login (deferred — couldn't repro)** — dashboard occasionally rendered "no active schedule" on first load post-sign-in; refresh fixed it. Keep an eye on it; suspected cause is SSR/auth-cookie timing landing `[]` in the cache with `staleTime: 5min` preventing a refetch.
+  - [ ] **Brief flash on first dashboard load** — empty/loading state visible briefly before data arrives. Probably client-side navigation post-sign-in skipping SSR; deferred until easier to repro.
+  - [x] **Auto-pay icon swap** — current teal checkmark conflicts visually with the paid-state checkbox indicator. Replace with something that reads "recurring/automatic" (e.g. `FiRepeat` or `FiRefreshCw`).
+  - [x] **Row 4 — keep paid bills visible** — broaden the filter to include this-month bills with `dueDayOfMonth >= today` regardless of state. Paid rows render muted/strikethrough with a compact "Paid" badge in the Pay button slot. Cap stays at 7. Reasoning: paid items disappearing entirely loses the "what's already taken care of" at-a-glance value.
+  - [x] **Row 3 — drop the checkbox** — read-only on the dashboard (corrections go through detail), so it doesn't earn its real estate. Use the right-side action slot for Pay button when actionable, compact "Paid" badge when paid.
+  - [x] **Row 3 — sort by paid status** — sort key becomes `isPaid asc, dueDayOfMonth asc`. Paid at bottom so the top of the list is always the next thing to act on.
 - [ ] reevaluate the error/warning color. right now i thhink the color is a little too comforting to stand out as an error color. but we also want whatever error color we choose to still fit the palette.
 - [ ] global not found / 404 page
+- [ ] archived (bill/schedule) page: archived column, use locale number date string rather than spelled out eg 6/15/26 vs june 15 2026.

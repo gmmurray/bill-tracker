@@ -565,7 +565,7 @@ function LedgerSection({
             + Log Historical Payment
           </Button>
           <Button variant="pay" size="sm" onClick={onPayNow}>
-            Pay Now
+            Mark Paid
           </Button>
         </div>
       </CardHeader>

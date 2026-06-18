@@ -13,7 +13,8 @@ import {
 import {
   clampDayToMonth,
   deriveBillState,
-  formatOrdinal,
+  formatCurrency,
+  formatDueLabel,
   msUntilNextMidnight,
   selectActiveSchedule,
 } from '#/features/bills/bills-helpers';
@@ -323,9 +324,9 @@ function AttentionRow({
         >
           {bill.name}
         </Link>
-        <p className="text-xs text-chill-text-muted">
-          Due {formatOrdinal(bill.dueDayOfMonth)} &middot; $
-          {(bill.amountExpected / 100).toFixed(2)}
+        <p className="text-xs text-chill-text-muted tabular-nums">
+          {formatCurrency(bill.amountExpected)} &middot;{' '}
+          {formatDueLabel(bill.dueDayOfMonth)}
         </p>
       </div>
       {state === 'OVERDUE' ? (
@@ -336,7 +337,7 @@ function AttentionRow({
         </Badge>
       )}
       <Button variant="pay" size="sm" onClick={onPay}>
-        Pay
+        Mark Paid
       </Button>
     </li>
   );
@@ -360,13 +361,13 @@ function UpcomingRow({
         >
           {bill.name}
         </Link>
-        <p className="text-xs text-chill-text-muted">
-          Due {formatOrdinal(bill.dueDayOfMonth)} &middot; $
-          {(bill.amountExpected / 100).toFixed(2)}
+        <p className="text-xs text-chill-text-muted tabular-nums">
+          {formatCurrency(bill.amountExpected)} &middot;{' '}
+          {formatDueLabel(bill.dueDayOfMonth)}
         </p>
       </div>
       <Button variant="pay" size="sm" onClick={onPay}>
-        Pay
+        Mark Paid
       </Button>
     </li>
   );

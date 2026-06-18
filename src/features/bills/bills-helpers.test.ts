@@ -4,6 +4,7 @@ import {
   computeNearestUnpaidDueDate,
   deriveBillState,
   formatCurrency,
+  formatDueLabel,
   formatOrdinal,
   isScheduleSessionComplete,
   mostRecentPastSession,
@@ -107,6 +108,21 @@ describe('formatOrdinal', () => {
     expect(formatOrdinal(12)).toBe('12th');
     expect(formatOrdinal(13)).toBe('13th');
     expect(formatOrdinal(20)).toBe('20th');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// formatDueLabel
+// ---------------------------------------------------------------------------
+
+describe('formatDueLabel', () => {
+  it('prefixes "Due the" before the ordinal', () => {
+    expect(formatDueLabel(1)).toBe('Due the 1st');
+    expect(formatDueLabel(2)).toBe('Due the 2nd');
+    expect(formatDueLabel(3)).toBe('Due the 3rd');
+    expect(formatDueLabel(15)).toBe('Due the 15th');
+    expect(formatDueLabel(22)).toBe('Due the 22nd');
+    expect(formatDueLabel(31)).toBe('Due the 31st');
   });
 });
 

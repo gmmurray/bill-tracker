@@ -2,12 +2,14 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import * as React from 'react';
 import { useBillActionsState } from '#/components/bill-actions-drawer';
 import { PayBillDialog } from '#/components/pay-bill-dialog';
+import { Badge } from '#/components/ui/badge';
 import { Button } from '#/components/ui/button';
 import { Card, CardBody, CardHeader } from '#/components/ui/card';
 import {
   clampDayToMonth,
   deriveBillState,
   formatCurrency,
+  formatDueLabel,
   formatOrdinal,
   selectActiveSchedule,
 } from '#/features/bills/bills-helpers';
@@ -82,30 +84,38 @@ function DashboardPage() {
     instancesByBillId,
     today,
   );
-  const activeScheduleBills = activeSchedule
+  const activeScheduleEntries = activeSchedule
     ? bills
         .filter(b => b.payScheduleId === activeSchedule.id)
-        .sort((a, b) => a.dueDayOfMonth - b.dueDayOfMonth)
+        .map(bill => {
+          const instances = instancesByBillId.get(bill.id) ?? [];
+          const state = deriveBillState(bill, activeSchedule, instances, today);
+          return { bill, state, isPaid: state === 'PAID' };
+        })
+        .sort((a, b) => {
+          if (a.isPaid !== b.isPaid) return a.isPaid ? 1 : -1;
+          return a.bill.dueDayOfMonth - b.bill.dueDayOfMonth;
+        })
     : [];
-  const allChecklistPaid = activeScheduleBills.every(b => {
-    const instances = instancesByBillId.get(b.id) ?? [];
-    return deriveBillState(b, activeSchedule, instances, today) === 'PAID';
-  });
+  const allChecklistPaid = activeScheduleEntries.every(e => e.isPaid);
 
-  // Row 4 — upcoming preview (first 7 UPCOMING bills with clamped due day >= today)
+  // Row 4 — upcoming preview (this-month bills due on/after today, paid or not)
   const upcomingPreview = bills
-    .filter(bill => {
+    .map(bill => {
       const schedule = schedules.find(s => s.id === bill.payScheduleId) ?? null;
       const instances = instancesByBillId.get(bill.id) ?? [];
       const state = deriveBillState(bill, schedule, instances, today);
+      return { bill, state, isPaid: state === 'PAID' };
+    })
+    .filter(({ bill }) => {
       const clamped = clampDayToMonth(
         bill.dueDayOfMonth,
         todayYear,
         todayMonth,
       );
-      return state === 'UPCOMING' && clamped >= todayDay;
+      return clamped >= todayDay;
     })
-    .sort((a, b) => a.dueDayOfMonth - b.dueDayOfMonth)
+    .sort((a, b) => a.bill.dueDayOfMonth - b.bill.dueDayOfMonth)
     .slice(0, 7);
 
   function openPayDialog(
@@ -165,7 +175,7 @@ function DashboardPage() {
             </Link>
           </CardBody>
         </Card>
-      ) : activeScheduleBills.length === 0 ? (
+      ) : activeScheduleEntries.length === 0 ? (
         <Card>
           <CardBody className="px-6 py-8 text-sm text-chill-text-muted text-center">
             No bills assigned to {activeSchedule.name}.{' '}
@@ -193,25 +203,16 @@ function DashboardPage() {
             </span>
           </CardHeader>
           <ul>
-            {activeScheduleBills.map(bill => {
-              const instances = instancesByBillId.get(bill.id) ?? [];
-              const state = deriveBillState(
-                bill,
-                activeSchedule,
-                instances,
-                today,
-              );
-              const isPaid = state === 'PAID';
-              return (
-                <ChecklistRow
-                  key={bill.id}
-                  bill={bill}
-                  state={state}
-                  isPaid={isPaid}
-                  onPay={() => openPayDialog(bill)}
-                />
-              );
-            })}
+            {activeScheduleEntries.map(({ bill, state, isPaid }) => (
+              <BillRow
+                key={bill.id}
+                bill={bill}
+                state={state}
+                isPaid={isPaid}
+                showStateBackground
+                onPay={() => openPayDialog(bill)}
+              />
+            ))}
           </ul>
         </Card>
       )}
@@ -225,10 +226,12 @@ function DashboardPage() {
             </span>
           </CardHeader>
           <ul>
-            {upcomingPreview.map(bill => (
-              <UpcomingPreviewRow
+            {upcomingPreview.map(({ bill, state, isPaid }) => (
+              <BillRow
                 key={bill.id}
                 bill={bill}
+                state={state}
+                isPaid={isPaid}
                 onPay={() => openPayDialog(bill)}
               />
             ))}
@@ -309,142 +312,60 @@ function Donut({
   );
 }
 
-function ChecklistRow({
+function BillRow({
   bill,
   state,
   isPaid,
+  showStateBackground = false,
   onPay,
 }: {
   bill: BillWithSchedule;
   state: ReturnType<typeof deriveBillState>;
   isPaid: boolean;
+  showStateBackground?: boolean;
   onPay: () => void;
 }) {
   return (
     <li
       className={cn(
         'flex items-center gap-3 px-4 py-3 border-b border-chill-border last:border-0',
-        state === 'MISSED_SCHEDULE' &&
+        showStateBackground &&
+          state === 'MISSED_SCHEDULE' &&
           'bg-amber-50 border-l-2 border-l-amber-400',
-        state === 'OVERDUE' &&
+        showStateBackground &&
+          state === 'OVERDUE' &&
           'bg-chill-peach border-l-2 border-l-chill-peach-border',
       )}
     >
-      <button
-        type="button"
-        onClick={() => {
-          if (!isPaid) onPay();
-        }}
-        aria-label={isPaid ? 'Paid' : `Mark ${bill.name} as paid`}
-        className={cn(
-          'shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors',
-          isPaid
-            ? 'border-chill-teal bg-chill-teal cursor-default'
-            : 'border-chill-border bg-transparent hover:border-chill-teal cursor-pointer',
-        )}
-      >
-        {isPaid && (
-          <svg
-            width="10"
-            height="10"
-            viewBox="0 0 10 10"
-            fill="none"
-            aria-hidden="true"
-          >
-            <path
-              d="M2 5l2 2 4-4"
-              stroke="white"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        )}
-      </button>
-
       <div className="flex-1 min-w-0">
         <Link
           to="/bills/$billId"
           params={{ billId: bill.id }}
           search={{ edit: false, page: 1 }}
           className={cn(
-            'text-sm font-medium hover:underline truncate block',
-            isPaid ? 'line-through text-chill-text-muted' : 'text-chill-text',
+            'text-sm font-medium truncate block',
+            isPaid
+              ? 'line-through text-chill-text-muted hover:[text-decoration-line:underline_line-through]'
+              : 'text-chill-text hover:underline',
           )}
         >
           {bill.name}
         </Link>
-        <p className="text-xs text-chill-text-muted">
-          Due {formatOrdinal(bill.dueDayOfMonth)}
+        <p className="text-xs text-chill-text-muted tabular-nums">
+          {formatCurrency(bill.amountExpected)} &middot;{' '}
+          {formatDueLabel(bill.dueDayOfMonth)}
         </p>
       </div>
 
-      <div
-        className={cn(
-          'flex items-center gap-1.5 text-sm tabular-nums shrink-0',
-          isPaid ? 'text-chill-text-muted' : 'text-chill-text',
-        )}
-      >
-        {formatCurrency(bill.amountExpected)}
-        {bill.isAutoPay && <AutoPayIcon />}
-      </div>
+      {bill.isAutoPay && <Badge variant="teal">Auto</Badge>}
 
-      {!isPaid && (
+      {isPaid ? (
+        <Badge variant="default">Paid</Badge>
+      ) : (
         <Button variant="pay" size="sm" onClick={onPay}>
-          Pay
+          Mark Paid
         </Button>
       )}
     </li>
-  );
-}
-
-function UpcomingPreviewRow({
-  bill,
-  onPay,
-}: {
-  bill: BillWithSchedule;
-  onPay: () => void;
-}) {
-  return (
-    <li className="flex items-center gap-3 px-4 py-3 border-b border-chill-border last:border-0">
-      <span className="text-xs text-chill-text-muted w-10 shrink-0">
-        {formatOrdinal(bill.dueDayOfMonth)}
-      </span>
-      <Link
-        to="/bills/$billId"
-        params={{ billId: bill.id }}
-        search={{ edit: false, page: 1 }}
-        className="flex-1 min-w-0 text-sm font-medium text-chill-text hover:underline truncate"
-      >
-        {bill.name}
-      </Link>
-      <div className="flex items-center gap-1.5 text-sm tabular-nums text-chill-text shrink-0">
-        {formatCurrency(bill.amountExpected)}
-        {bill.isAutoPay && <AutoPayIcon />}
-      </div>
-      <Button variant="pay" size="sm" onClick={onPay}>
-        Pay
-      </Button>
-    </li>
-  );
-}
-
-function AutoPayIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="text-chill-teal"
-      aria-hidden="true"
-    >
-      <path d="M20 6 9 17l-5-5" />
-    </svg>
   );
 }

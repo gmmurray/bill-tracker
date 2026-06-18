@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
+import { FiRepeat } from 'react-icons/fi';
 import { z } from 'zod';
 import {
   AlertDialog,
@@ -250,21 +251,11 @@ function BillTableRow({
       </td>
       <td className="px-4 py-3 text-center">
         {bill.isAutoPay ? (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+          <FiRepeat
+            size={16}
             className="mx-auto text-chill-teal"
-            aria-hidden="true"
-          >
-            <path d="M20 6 9 17l-5-5" />
-          </svg>
+            aria-label="Auto-pay"
+          />
         ) : (
           <span className="text-chill-text-muted" aria-hidden="true">
             —
@@ -344,20 +335,7 @@ function BillMobileCard({
             </span>
             {bill.isAutoPay && (
               <span className="text-xs text-chill-teal flex items-center gap-1">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M20 6 9 17l-5-5" />
-                </svg>
+                <FiRepeat size={12} aria-hidden="true" />
                 Auto
               </span>
             )}

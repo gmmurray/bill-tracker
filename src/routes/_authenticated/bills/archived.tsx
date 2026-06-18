@@ -13,7 +13,7 @@ import {
 } from '#/components/ui/alert-dialog';
 import { Button } from '#/components/ui/button';
 import { Card } from '#/components/ui/card';
-import { formatOrdinal } from '#/features/bills/bills-helpers';
+import { formatDueLabel, formatOrdinal } from '#/features/bills/bills-helpers';
 import type { Bill } from '#/features/bills/bills-model';
 import {
   archivedBillsCountQueryOptions,
@@ -166,7 +166,7 @@ function ArchivedBillMobileCard({ bill }: { bill: Bill }) {
     <li className="px-4 py-4">
       <p className="font-medium text-chill-text">{bill.name}</p>
       <p className="text-xs text-chill-text-muted mt-0.5">
-        Due {formatOrdinal(bill.dueDayOfMonth)} · Archived{' '}
+        {formatDueLabel(bill.dueDayOfMonth)} · Archived{' '}
         {formatArchiveDate(bill.updatedAt)}
       </p>
       <div className="mt-2 flex justify-end gap-1">
