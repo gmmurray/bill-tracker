@@ -48,3 +48,4 @@
 - [ ] reevaluate the error/warning color. right now i thhink the color is a little too comforting to stand out as an error color. but we also want whatever error color we choose to still fit the palette.
 - [ ] global not found / 404 page
 - [ ] archived (bill/schedule) page: archived column, use locale number date string rather than spelled out eg 6/15/26 vs june 15 2026.
+- [ ] dashboard - active schedule collapse so user can quickly view the upcoming bills row below
