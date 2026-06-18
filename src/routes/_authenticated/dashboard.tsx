@@ -99,7 +99,9 @@ function DashboardPage() {
     : [];
   const allChecklistPaid = activeScheduleEntries.every(e => e.isPaid);
 
-  // Row 4 — upcoming preview (this-month bills due on/after today, paid or not)
+  // Row 4 — upcoming preview (this-month bills due on/after today, paid or not).
+  // Excludes bills already shown in Row 3's active session checklist; if there
+  // is no active schedule, no exclusion applies so Row 4 still covers everything.
   const upcomingPreview = bills
     .map(bill => {
       const schedule = schedules.find(s => s.id === bill.payScheduleId) ?? null;
@@ -108,6 +110,9 @@ function DashboardPage() {
       return { bill, state, isPaid: state === 'PAID' };
     })
     .filter(({ bill }) => {
+      if (activeSchedule && bill.payScheduleId === activeSchedule.id) {
+        return false;
+      }
       const clamped = clampDayToMonth(
         bill.dueDayOfMonth,
         todayYear,
@@ -153,6 +158,7 @@ function DashboardPage() {
               fraction={totalCount > 0 ? paidCount / totalCount : 0}
               centerLabel={`${paidCount} / ${totalCount}`}
               subLabel="bills paid"
+              variant="teal"
             />
           </Card>
           <Card className="p-6 flex flex-col items-center">
@@ -160,6 +166,7 @@ function DashboardPage() {
               fraction={totalCents > 0 ? paidCents / totalCents : 0}
               centerLabel={formatCurrency(paidCents)}
               subLabel={`of ${formatCurrency(totalCents)}`}
+              variant="purple"
             />
           </Card>
         </div>
@@ -267,19 +274,33 @@ function DashboardPage() {
   );
 }
 
+const donutColors = {
+  teal: {
+    track: 'var(--color-chill-teal-light)',
+    fill: 'var(--color-chill-teal)',
+  },
+  purple: {
+    track: 'var(--color-chill-purple-light)',
+    fill: 'var(--color-chill-purple)',
+  },
+} as const;
+
 function Donut({
   fraction,
   centerLabel,
   subLabel,
+  variant,
 }: {
   fraction: number;
   centerLabel: string;
   subLabel: string;
+  variant: keyof typeof donutColors;
 }) {
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
   const safeFraction = Math.max(0, Math.min(1, fraction));
   const dash = safeFraction * circumference;
+  const colors = donutColors[variant];
   return (
     <div className="flex flex-col items-center gap-2">
       <svg viewBox="0 0 100 100" className="w-32 h-32 -rotate-90">
@@ -288,7 +309,7 @@ function Donut({
           cy="50"
           r={radius}
           fill="none"
-          stroke="var(--color-chill-teal-light)"
+          stroke={colors.track}
           strokeWidth="10"
         />
         <circle
@@ -296,7 +317,7 @@ function Donut({
           cy="50"
           r={radius}
           fill="none"
-          stroke="var(--color-chill-teal)"
+          stroke={colors.fill}
           strokeWidth="10"
           strokeDasharray={`${dash} ${circumference - dash}`}
           strokeLinecap="round"
