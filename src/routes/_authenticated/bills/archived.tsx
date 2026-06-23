@@ -23,6 +23,7 @@ import {
   useDeleteBill,
   useRestoreBill,
 } from '#/features/bills/bills-queries';
+import { formatShortDate } from '#/lib/utils';
 
 export const Route = createFileRoute('/_authenticated/bills/archived')({
   loader: ({ context }) =>
@@ -74,7 +75,7 @@ function BillsArchivePage() {
                   <th className="px-4 py-3 font-medium text-chill-text-muted w-28">
                     Due Day
                   </th>
-                  <th className="px-4 py-3 font-medium text-chill-text-muted w-44">
+                  <th className="px-4 py-3 font-medium text-chill-text-muted w-28">
                     Archived
                   </th>
                   <th className="px-4 py-3 w-36" />
@@ -109,7 +110,7 @@ function ArchivedBillRow({ bill }: { bill: Bill }) {
         {formatOrdinal(bill.dueDayOfMonth)}
       </td>
       <td className="px-4 py-3 text-chill-text-muted">
-        {formatArchiveDate(bill.updatedAt)}
+        {formatShortDate(bill.updatedAt)}
       </td>
       <td className="px-4 py-3 text-right">
         <div className="flex items-center justify-end gap-1">
@@ -167,7 +168,7 @@ function ArchivedBillMobileCard({ bill }: { bill: Bill }) {
       <p className="font-medium text-chill-text">{bill.name}</p>
       <p className="text-xs text-chill-text-muted mt-0.5">
         {formatDueLabel(bill.dueDayOfMonth)} · Archived{' '}
-        {formatArchiveDate(bill.updatedAt)}
+        {formatShortDate(bill.updatedAt)}
       </p>
       <div className="mt-2 flex justify-end gap-1">
         <Button
@@ -213,12 +214,4 @@ function ArchivedBillMobileCard({ bill }: { bill: Bill }) {
       </div>
     </li>
   );
-}
-
-function formatArchiveDate(isoDatetime: string) {
-  return new Date(isoDatetime).toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
 }

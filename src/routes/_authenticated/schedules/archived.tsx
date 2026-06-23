@@ -22,6 +22,7 @@ import {
   useDeletePaySchedule,
   useRestorePaySchedule,
 } from '#/features/pay-schedules/pay-schedules-queries';
+import { formatShortDate } from '#/lib/utils';
 
 export const Route = createFileRoute('/_authenticated/schedules/archived')({
   loader: ({ context }) =>
@@ -74,7 +75,7 @@ function SchedulesArchivePage() {
                   <th className="px-4 py-3 font-medium text-chill-text-muted w-32">
                     Anchor Day
                   </th>
-                  <th className="px-4 py-3 font-medium text-chill-text-muted w-44">
+                  <th className="px-4 py-3 font-medium text-chill-text-muted w-28">
                     Archived
                   </th>
                   <th className="px-4 py-3 w-40" />
@@ -113,7 +114,7 @@ function ArchivedScheduleRow({ schedule }: { schedule: PaySchedule }) {
         {formatOrdinal(schedule.anchorDay)}
       </td>
       <td className="px-4 py-3 text-chill-text-muted">
-        {formatArchiveDate(schedule.updatedAt)}
+        {formatShortDate(schedule.updatedAt)}
       </td>
       <td className="px-4 py-3 text-right">
         <div className="flex items-center justify-end gap-1">
@@ -173,7 +174,7 @@ function ArchivedScheduleMobileCard({ schedule }: { schedule: PaySchedule }) {
       <p className="font-medium text-chill-text">{schedule.name}</p>
       <p className="text-xs text-chill-text-muted mt-0.5">
         Anchor {formatOrdinal(schedule.anchorDay)} · Archived{' '}
-        {formatArchiveDate(schedule.updatedAt)}
+        {formatShortDate(schedule.updatedAt)}
       </p>
       <div className="mt-2 flex justify-end gap-1">
         <Button
@@ -219,12 +220,4 @@ function ArchivedScheduleMobileCard({ schedule }: { schedule: PaySchedule }) {
       </div>
     </li>
   );
-}
-
-function formatArchiveDate(isoDatetime: string) {
-  return new Date(isoDatetime).toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
 }
