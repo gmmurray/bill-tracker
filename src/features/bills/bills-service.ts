@@ -96,6 +96,7 @@ export const listBills = createServerFn({ method: 'GET' })
       .select({
         ...getTableColumns(bills),
         scheduleName: paySchedules.name,
+        schedulePayDate: paySchedules.payDate,
         scheduleIsActive: paySchedules.isActive,
       })
       .from(bills)
@@ -136,6 +137,7 @@ export const getBillDetail = createServerFn({ method: 'GET' })
     return {
       ...bill,
       scheduleName: schedule?.name ?? null,
+      schedulePayDate: schedule?.payDate ?? null,
       scheduleIsActive: schedule?.isActive ?? null,
       isOrphaned: bill.payScheduleId !== null && schedule?.isActive === false,
       instances,

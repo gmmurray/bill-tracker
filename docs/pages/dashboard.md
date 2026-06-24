@@ -67,14 +67,14 @@ Shows **all bills tied to the active pay session's schedule** — paid, unpaid, 
 
 For each active schedule, compute `currentSession`:
 
-- If any bill on the schedule has an unpaid target cycle (see "session-relative payment state" below) → `currentSession` = the most recent past anchor occurrence
-- Else → `currentSession` = the next future anchor occurrence
+- If any bill on the schedule has an unpaid target cycle (see "session-relative payment state" below) → `currentSession` = the most recent past pay date occurrence
+- Else → `currentSession` = the next future pay date occurrence
 
-Active schedule = the one with the earliest `currentSession` date. Ties broken by `anchorDay` ascending, then `name` ascending.
+Active schedule = the one with the earliest `currentSession` date. Ties broken by `payDate` ascending, then `name` ascending.
 
-This rule means: if you're mid-session on schedule A and the next schedule B's anchor day has technically arrived, schedule A stays in Row 3 until you finish it. Schedule B's bills wait their turn. Sessions queue up chronologically instead of fragmenting between rows when calendar anchors pass.
+This rule means: if you're mid-session on schedule A and the next schedule B's pay date has technically arrived, schedule A stays in Row 3 until you finish it. Schedule B's bills wait their turn. Sessions queue up chronologically instead of fragmenting between rows when calendar pay dates pass.
 
-Card header: `"Pay Session — {schedule.name} ({formatOrdinal(schedule.anchorDay)})"`.
+Card header: `"Pay Session — {schedule.name} ({formatOrdinal(schedule.payDate)})"`.
 
 **Session-relative payment state.**
 
@@ -86,7 +86,7 @@ targetDueDate = computeNearestUnpaidDueDate(bill.dueDayOfMonth, instances, today
 
 The checkbox is filled iff an instance exists for `targetDueDate`. Since `nearestUnpaidDueDate` returns the first cycle without an instance, the checkbox is effectively always empty until the user pays — at which point a new instance is created for `targetDueDate` and the next call returns the cycle after that.
 
-This makes pay-ahead workflows work: bill due 1st on a schedule anchored 15th, paying on Feb 15 for the March 1 cycle. The dashboard Pay dialog shows `"Applying to: 2026-03-01"` regardless of where the calendar happens to fall.
+This makes pay-ahead workflows work: bill due 1st on a schedule with pay date 15th, paying on Feb 15 for the March 1 cycle. The dashboard Pay dialog shows `"Applying to: 2026-03-01"` regardless of where the calendar happens to fall.
 
 **State styling per bill row** (uses calendar-relative state from `deriveBillState` for visual cues only — actionability is session-relative as above):
 

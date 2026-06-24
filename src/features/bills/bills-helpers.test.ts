@@ -39,7 +39,7 @@ function makeBill(
 
 function makeSchedule(
   id: string,
-  anchorDay: number,
+  payDate: number,
   name = 'Schedule',
   isActive = true,
 ): PaySchedule {
@@ -47,7 +47,7 @@ function makeSchedule(
     id,
     userId: 'user-1',
     name,
-    anchorDay,
+    payDate,
     isActive,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
@@ -224,7 +224,7 @@ describe('deriveBillState', () => {
     // Today: June 6 2026, due day 15 → nearest unpaid is July → PAID
     const today = new Date(2026, 5, 6);
     const bill = { dueDayOfMonth: 15, payScheduleId: 'sched-1' };
-    const schedule = { anchorDay: 1 };
+    const schedule = { payDate: 1 };
     const instances = [makeInstance(BILL_ID, '2026-06-15')];
     expect(deriveBillState(bill, schedule, instances, today)).toBe('PAID');
   });
@@ -236,23 +236,23 @@ describe('deriveBillState', () => {
     expect(deriveBillState(bill, null, [], today)).toBe('OVERDUE');
   });
 
-  it('returns MISSED_SCHEDULE when past anchor day but before due day with a schedule', () => {
-    // Today: June 10 2026, anchor day 5, due day 20
+  it('returns MISSED_SCHEDULE when past pay date but before due day with a schedule', () => {
+    // Today: June 10 2026, pay date 5, due day 20
     const today = new Date(2026, 5, 10);
     const bill = { dueDayOfMonth: 20, payScheduleId: 'sched-1' };
-    const schedule = { anchorDay: 5 };
+    const schedule = { payDate: 5 };
     expect(deriveBillState(bill, schedule, [], today)).toBe('MISSED_SCHEDULE');
   });
 
-  it('returns UPCOMING when today is before both anchor day and due day', () => {
-    // Today: June 3 2026, anchor day 10, due day 20
+  it('returns UPCOMING when today is before both pay date and due day', () => {
+    // Today: June 3 2026, pay date 10, due day 20
     const today = new Date(2026, 5, 3);
     const bill = { dueDayOfMonth: 20, payScheduleId: 'sched-1' };
-    const schedule = { anchorDay: 10 };
+    const schedule = { payDate: 10 };
     expect(deriveBillState(bill, schedule, [], today)).toBe('UPCOMING');
   });
 
-  it('returns UPCOMING (not MISSED_SCHEDULE) when past anchor day but no schedule assigned', () => {
+  it('returns UPCOMING (not MISSED_SCHEDULE) when past pay date but no schedule assigned', () => {
     // Today: June 10 2026, due day 20, no schedule
     const today = new Date(2026, 5, 10);
     const bill = { dueDayOfMonth: 20, payScheduleId: null };
@@ -270,16 +270,16 @@ describe('deriveBillState', () => {
     // Today: Feb 20 2026, due day 31 → clamped to 28. Today (20) <= 28 → not overdue
     const today = new Date(2026, 1, 20);
     const bill = { dueDayOfMonth: 31, payScheduleId: 'sched-1' };
-    const schedule = { anchorDay: 25 };
-    // today (20) <= clampedDueDay (28) and today (20) <= clampedAnchorDay (25) → UPCOMING
+    const schedule = { payDate: 25 };
+    // today (20) <= clampedDueDay (28) and today (20) <= clampedPayDate (25) → UPCOMING
     expect(deriveBillState(bill, schedule, [], today)).toBe('UPCOMING');
   });
 
-  it('returns MISSED_SCHEDULE on Feb 28 for bill due day 31 (clamped anchor already passed)', () => {
-    // Today: Feb 28 2026, due day 31 → clamped to 28. Anchor 1. Today (28) > 1, today (28) not > 28 → MISSED_SCHEDULE
+  it('returns MISSED_SCHEDULE on Feb 28 for bill due day 31 (clamped pay date already passed)', () => {
+    // Today: Feb 28 2026, due day 31 → clamped to 28. Pay date 1. Today (28) > 1, today (28) not > 28 → MISSED_SCHEDULE
     const today = new Date(2026, 1, 28);
     const bill = { dueDayOfMonth: 31, payScheduleId: 'sched-1' };
-    const schedule = { anchorDay: 1 };
+    const schedule = { payDate: 1 };
     expect(deriveBillState(bill, schedule, [], today)).toBe('MISSED_SCHEDULE');
   });
 
@@ -300,32 +300,32 @@ describe('deriveBillState', () => {
 // ---------------------------------------------------------------------------
 
 describe('mostRecentPastSession', () => {
-  it('returns previous month when today is before anchor', () => {
-    // June 3, anchor 15 → prev = May 15
+  it('returns previous month when today is before pay date', () => {
+    // June 3, pay date 15 → prev = May 15
     const result = mostRecentPastSession(15, new Date(2026, 5, 3));
     expect(result).toEqual(new Date(2026, 4, 15));
   });
 
-  it('returns current month when today equals clamped anchor', () => {
-    // June 15, anchor 15 → June 15
+  it('returns current month when today equals clamped pay date', () => {
+    // June 15, pay date 15 → June 15
     const result = mostRecentPastSession(15, new Date(2026, 5, 15));
     expect(result).toEqual(new Date(2026, 5, 15));
   });
 
-  it('returns current month when today is after anchor', () => {
-    // June 20, anchor 15 → June 15
+  it('returns current month when today is after pay date', () => {
+    // June 20, pay date 15 → June 15
     const result = mostRecentPastSession(15, new Date(2026, 5, 20));
     expect(result).toEqual(new Date(2026, 5, 15));
   });
 
-  it('clamps anchor 31 to Feb 28 in non-leap year when today is Feb 1', () => {
-    // Feb 1 2026, anchor 31 → clamped = 28, today (1) < 28 → prev = Jan 31
+  it('clamps pay date 31 to Feb 28 in non-leap year when today is Feb 1', () => {
+    // Feb 1 2026, pay date 31 → clamped = 28, today (1) < 28 → prev = Jan 31
     const result = mostRecentPastSession(31, new Date(2026, 1, 1));
     expect(result).toEqual(new Date(2026, 0, 31));
   });
 
   it('wraps year correctly when going to previous month from January', () => {
-    // Jan 1 2026, anchor 15 → Dec 15 2025
+    // Jan 1 2026, pay date 15 → Dec 15 2025
     const result = mostRecentPastSession(15, new Date(2026, 0, 1));
     expect(result).toEqual(new Date(2025, 11, 15));
   });
@@ -336,32 +336,32 @@ describe('mostRecentPastSession', () => {
 // ---------------------------------------------------------------------------
 
 describe('nextFutureSession', () => {
-  it('returns current month when today is before anchor', () => {
-    // June 3, anchor 15 → June 15
+  it('returns current month when today is before pay date', () => {
+    // June 3, pay date 15 → June 15
     const result = nextFutureSession(15, new Date(2026, 5, 3));
     expect(result).toEqual(new Date(2026, 5, 15));
   });
 
-  it('returns next month when today equals clamped anchor', () => {
-    // June 15, anchor 15 → July 15
+  it('returns next month when today equals clamped pay date', () => {
+    // June 15, pay date 15 → July 15
     const result = nextFutureSession(15, new Date(2026, 5, 15));
     expect(result).toEqual(new Date(2026, 6, 15));
   });
 
-  it('returns next month when today is after anchor', () => {
-    // June 20, anchor 15 → July 15
+  it('returns next month when today is after pay date', () => {
+    // June 20, pay date 15 → July 15
     const result = nextFutureSession(15, new Date(2026, 5, 20));
     expect(result).toEqual(new Date(2026, 6, 15));
   });
 
-  it('clamps anchor 31 to Feb 28 in non-leap year when today is Feb 1', () => {
-    // Feb 1 2026, anchor 31 → clamped = 28, today (1) < 28 → Feb 28
+  it('clamps pay date 31 to Feb 28 in non-leap year when today is Feb 1', () => {
+    // Feb 1 2026, pay date 31 → clamped = 28, today (1) < 28 → Feb 28
     const result = nextFutureSession(31, new Date(2026, 1, 1));
     expect(result).toEqual(new Date(2026, 1, 28));
   });
 
   it('wraps year correctly when going to next month from December', () => {
-    // Dec 20 2026, anchor 15 → Jan 15 2027
+    // Dec 20 2026, pay date 15 → Jan 15 2027
     const result = nextFutureSession(15, new Date(2026, 11, 20));
     expect(result).toEqual(new Date(2027, 0, 15));
   });
@@ -451,7 +451,7 @@ describe('selectActiveSchedule', () => {
   });
 
   it('returns the schedule when past session is incomplete', () => {
-    // today Jun 15, anchor 1 → past = Jun 1, bill due 20 not paid → incomplete
+    // today Jun 15, pay date 1 → past = Jun 1, bill due 20 not paid → incomplete
     const schedule = makeSchedule('s1', 1);
     const bill = makeBill('b1', 20, 's1');
     const result = selectActiveSchedule(
@@ -464,7 +464,7 @@ describe('selectActiveSchedule', () => {
   });
 
   it('returns the schedule when past session is complete (currentSession moves to next future)', () => {
-    // today Jun 15, anchor 1 → past = Jun 1, bill due 20 paid for Jun 20 → complete
+    // today Jun 15, pay date 1 → past = Jun 1, bill due 20 paid for Jun 20 → complete
     const schedule = makeSchedule('s1', 1);
     const bill = makeBill('b1', 20, 's1');
     const map = makeInstMap([['b1', [makeInstance('b1', '2026-06-20')]]]);
@@ -479,8 +479,8 @@ describe('selectActiveSchedule', () => {
 
   it('picks schedule with earlier currentSession: unfinished past beats finished future', () => {
     // today Feb 1 2026
-    // A: anchor 1, bill unpaid → past Feb 1 incomplete → currentSession Feb 1
-    // B: anchor 1, bill paid for Feb 1 session → complete → currentSession Mar 1
+    // A: pay date 1, bill unpaid → past Feb 1 incomplete → currentSession Feb 1
+    // B: pay date 1, bill paid for Feb 1 session → complete → currentSession Mar 1
     const today = new Date(2026, 1, 1);
     const sA = makeSchedule('sA', 1, 'A');
     const sB = makeSchedule('sB', 1, 'B');
@@ -497,8 +497,8 @@ describe('selectActiveSchedule', () => {
 
   it('picks schedule with earlier currentSession: Jan 15 beats Feb 1', () => {
     // today Feb 3 2026
-    // A: anchor 15 → past = Jan 15, bills unpaid → currentSession Jan 15
-    // B: anchor 1  → past = Feb 1,  bills unpaid → currentSession Feb 1
+    // A: pay date 15 → past = Jan 15, bills unpaid → currentSession Jan 15
+    // B: pay date 1  → past = Feb 1,  bills unpaid → currentSession Feb 1
     const today = new Date(2026, 1, 3);
     const sA = makeSchedule('sA', 15, 'A');
     const sB = makeSchedule('sB', 1, 'B');
@@ -512,11 +512,11 @@ describe('selectActiveSchedule', () => {
     expect(result?.id).toBe('sA');
   });
 
-  it('tiebreaks same currentSession date by anchorDay ascending', () => {
+  it('tiebreaks same currentSession date by payDate ascending', () => {
     // today Feb 28 2026 (last day of non-leap Feb)
-    // A: anchor 28 → clamp(28,2026,2)=28, today(28)>=28 → past=Feb28. Unpaid → currentSession=Feb28
-    // B: anchor 29 → clamp(29,2026,2)=28, today(28)>=28 → past=Feb28. Unpaid → currentSession=Feb28
-    // Same date → tiebreak anchorDay: 28 < 29 → A wins
+    // A: pay date 28 → clamp(28,2026,2)=28, today(28)>=28 → past=Feb28. Unpaid → currentSession=Feb28
+    // B: pay date 29 → clamp(29,2026,2)=28, today(28)>=28 → past=Feb28. Unpaid → currentSession=Feb28
+    // Same date → tiebreak payDate: 28 < 29 → A wins
     const today = new Date(2026, 1, 28);
     const sA = makeSchedule('sA', 28, 'A');
     const sB = makeSchedule('sB', 29, 'B');
@@ -530,8 +530,8 @@ describe('selectActiveSchedule', () => {
     expect(result?.id).toBe('sA');
   });
 
-  it('tiebreaks same date and anchorDay by name ascending', () => {
-    // today Feb 2 2026, both anchor 1 → both past=Feb1, both unpaid → both currentSession=Feb1
+  it('tiebreaks same date and payDate by name ascending', () => {
+    // today Feb 2 2026, both pay date 1 → both past=Feb1, both unpaid → both currentSession=Feb1
     const today = new Date(2026, 1, 2);
     const sA = makeSchedule('sA', 1, 'Alpha');
     const sB = makeSchedule('sB', 1, 'Beta');

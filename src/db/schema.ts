@@ -15,7 +15,7 @@ export const paySchedules = sqliteTable(
     id: text('id').primaryKey(),
     userId: text('user_id').notNull(),
     name: text('name').notNull(),
-    anchorDay: integer('anchor_day').notNull(),
+    payDate: integer('pay_date').notNull(),
     isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
     createdAt: text('created_at').default(isoNow).notNull(),
     updatedAt: text('updated_at')
@@ -25,10 +25,10 @@ export const paySchedules = sqliteTable(
   },
   table => [
     index('pay_schedules_user_id_idx').on(table.userId),
-    index('pay_schedules_user_active_anchor_idx').on(
+    index('pay_schedules_user_active_pay_date_idx').on(
       table.userId,
       table.isActive,
-      table.anchorDay,
+      table.payDate,
     ),
   ],
 );

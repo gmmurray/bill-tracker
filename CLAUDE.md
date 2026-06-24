@@ -23,9 +23,11 @@ Details and algorithms: [docs/business-logic.md](docs/business-logic.md).
 Three tables (see `src/db/schema.ts`):
 
 **`pay_schedules`** — A named workflow session.
-- `anchorDay`: day of the month the user sits down to pay this group of bills (not a paycheck date)
+- `payDate`: day of the month the user settles this group of bills — *not* a paycheck date
 - Users may have multiple active schedules
 - `isActive`: soft-delete flag for archiving
+
+**Copy conventions for `payDate`:** the field's canonical UI label is **"Pay date"**. In running copy, **"Pay on {ordinal}"** (verb form, e.g. "Pay on the 15th") and **"settle / settlement"** ("...the day you settle this group of bills") are valid substitutes — use them when the noun form reads awkwardly or when the surrounding sentence wants verb energy. Don't introduce other synonyms.
 
 **`bills`** — A recurring bill blueprint.
 - `dueDayOfMonth`: actual vendor deadline
@@ -43,7 +45,7 @@ Three tables (see `src/db/schema.ts`):
 
 ### Date Math Rule
 
-Always compare `today.getDate()` against `Math.min(daysInCurrentMonth, targetDay)` — never against raw `dueDayOfMonth` / `anchorDay`. Use `clampDayToMonth(day, year, month)` from `bills-helpers.ts`. This makes "due on the 31st" safely evaluate in February without special-casing.
+Always compare `today.getDate()` against `Math.min(daysInCurrentMonth, targetDay)` — never against raw `dueDayOfMonth` / `payDate`. Use `clampDayToMonth(day, year, month)` from `bills-helpers.ts`. This makes "due on the 31st" safely evaluate in February without special-casing.
 
 ---
 

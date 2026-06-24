@@ -114,9 +114,9 @@ export function BillActionsProvider({
         state === 'MISSED_SCHEDULE' &&
         bill.payScheduleId !== activeSchedule?.id
       ) {
-        const anchorDay = schedule?.anchorDay ?? bill.dueDayOfMonth;
-        const clampedAnchor = clampDayToMonth(anchorDay, todayYear, todayMonth);
-        attention.push({ bill, state, daysPast: todayDay - clampedAnchor });
+        const payDate = schedule?.payDate ?? bill.dueDayOfMonth;
+        const clampedPayDate = clampDayToMonth(payDate, todayYear, todayMonth);
+        attention.push({ bill, state, daysPast: todayDay - clampedPayDate });
       } else if (state === 'UPCOMING') {
         const clampedDue = clampDayToMonth(
           bill.dueDayOfMonth,

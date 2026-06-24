@@ -7,7 +7,7 @@
 
 ## Workflow framing
 
-This is not a CRUD page first — it is the **assignment workflow** for the app. The user's primary question on this page is: *"What bills do I pay on the 1st? On the 15th? What's still unassigned?"* CRUD (rename, change anchor day, archive) is a secondary action accessed through per-card menus.
+This is not a CRUD page first — it is the **assignment workflow** for the app. The user's primary question on this page is: *"What bills do I pay on the 1st? On the 15th? What's still unassigned?"* CRUD (rename, change pay date, archive) is a secondary action accessed through per-card menus.
 
 ---
 
@@ -19,11 +19,11 @@ Page title "Pay Schedules" on the left. `+ New Schedule` button on the right —
 
 ### Schedule Cards
 
-One `Card` per active schedule, ordered by `anchorDay` ascending.
+One `Card` per active schedule, ordered by `payDate` ascending.
 
 **Card header:**
 
-- Schedule name and anchor day (e.g. "1st of Month (anchor day 1)")
+- Schedule name and pay date (e.g. "Pay date: 1st of every month")
 - **Aggregate total** of `amountExpected` across assigned bills, rendered inline on the right (e.g. "$1,355.00")
 - Schedule-level `⋯` menu (icon button → `DropdownMenu`):
   - "Edit" — opens edit drawer
@@ -78,9 +78,9 @@ Triggered by `+ New Schedule`. Responsive drawer.
 | Field | Input | Validation |
 |---|---|---|
 | Name | Text | Required, 1–100 chars |
-| Anchor day | Number input | Required, 1–31 |
+| Pay date | Number input | Required, 1–31 |
 
-On success: close drawer, toast feedback comes from `useCreatePaySchedule` hook. New schedule appears in the list (sorted by anchor day).
+On success: close drawer, toast feedback comes from `useCreatePaySchedule` hook. New schedule appears in the list (sorted by pay date).
 
 ---
 
@@ -134,7 +134,7 @@ Group bills in memory: build a `Map<string | 'unassigned', Bill[]>` keyed on `pa
 
 Mirror of `/bills/archived`. Simple flat list of archived (`isActive = false`) schedules ordered by name.
 
-**Columns:** Name | Anchor Day | Archived (date) | Actions
+**Columns:** Name | Pay Date | Archived (date) | Actions
 
 **Restore** — calls `useRestorePaySchedule` (backend gap), invalidates archive + active lists, toast feedback.
 

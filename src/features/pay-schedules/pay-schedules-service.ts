@@ -22,7 +22,7 @@ export const listPaySchedules = createServerFn({ method: 'GET' }).handler(
       .where(
         and(eq(paySchedules.userId, userId), eq(paySchedules.isActive, true)),
       )
-      .orderBy(asc(paySchedules.anchorDay));
+      .orderBy(asc(paySchedules.payDate));
   },
 );
 
@@ -59,7 +59,7 @@ export const createPaySchedule = createServerFn({ method: 'POST' })
         id: crypto.randomUUID(),
         userId,
         name: data.name,
-        anchorDay: data.anchorDay,
+        payDate: data.payDate,
       })
       .returning();
 

@@ -7,6 +7,7 @@ export type BillInstance = typeof billInstances.$inferSelect;
 
 export type BillWithSchedule = Bill & {
   scheduleName: string | null;
+  schedulePayDate: number | null;
   scheduleIsActive: boolean | null;
   isOrphaned: boolean;
 };

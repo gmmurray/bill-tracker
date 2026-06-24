@@ -79,7 +79,7 @@ Section header: `"Needs attention"` + count badge (`{N}`), peach/amber accent.
 
 Row content: name, ordinal day, amount, state tag (`Overdue` peach badge / `Missed schedule` amber badge), `Pay` button.
 
-Sort: **days past due descending** (worst offender at the top). Bills in `OVERDUE` state count days as `today - clampedDueDay`. Bills in `MISSED_SCHEDULE`-from-non-active state count days as `today - clampedAnchorDay`. Ties broken by `dueDayOfMonth` ascending.
+Sort: **days past due descending** (worst offender at the top). Bills in `OVERDUE` state count days as `today - clampedDueDay`. Bills in `MISSED_SCHEDULE`-from-non-active state count days as `today - clampedPayDate`. Ties broken by `dueDayOfMonth` ascending.
 
 Bills included:
 - `OVERDUE` (any schedule assignment, including orphaned and unassigned)

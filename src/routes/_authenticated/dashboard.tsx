@@ -206,7 +206,7 @@ function DashboardPage() {
           <CardHeader>
             <span className="text-sm font-semibold text-chill-text">
               Pay Session — {activeSchedule.name} (
-              {formatOrdinal(activeSchedule.anchorDay)})
+              {formatOrdinal(activeSchedule.payDate)})
             </span>
           </CardHeader>
           <ul>

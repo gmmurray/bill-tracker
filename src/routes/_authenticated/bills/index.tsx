@@ -35,7 +35,7 @@ import {
   SelectValue,
 } from '#/components/ui/select';
 import { Switch } from '#/components/ui/switch';
-import { formatCurrency } from '#/features/bills/bills-helpers';
+import { formatCurrency, formatOrdinal } from '#/features/bills/bills-helpers';
 import type { BillWithSchedule } from '#/features/bills/bills-model';
 import {
   archivedBillsCountQueryOptions,
@@ -86,7 +86,7 @@ function BillManagementPage() {
 
   const activeSchedules = (schedulesQuery.data ?? [])
     .filter(s => s.isActive)
-    .sort((a, b) => a.anchorDay - b.anchorDay);
+    .sort((a, b) => a.payDate - b.payDate);
 
   return (
     <div className="px-6 py-8 max-w-5xl mx-auto">
@@ -240,10 +240,21 @@ function BillTableRow({
       </td>
       <td className="px-4 py-3 font-medium">{bill.name}</td>
       <td className="px-4 py-3 text-chill-text-muted">
-        {bill.isOrphaned ? (
-          <span className="text-amber-700">{bill.scheduleName} (inactive)</span>
+        {bill.scheduleName === null ? (
+          <span>Unassigned</span>
+        ) : bill.isOrphaned ? (
+          <span className="text-amber-700">
+            {bill.scheduleName}
+            {bill.schedulePayDate !== null &&
+              ` (${formatOrdinal(bill.schedulePayDate)})`}{' '}
+            (inactive)
+          </span>
         ) : (
-          <span>{bill.scheduleName ?? 'Unassigned'}</span>
+          <span>
+            {bill.scheduleName}
+            {bill.schedulePayDate !== null &&
+              ` (${formatOrdinal(bill.schedulePayDate)})`}
+          </span>
         )}
       </td>
       <td className="px-4 py-3 text-right tabular-nums">
@@ -320,12 +331,21 @@ function BillMobileCard({
             <p className="font-medium text-chill-text truncate">{bill.name}</p>
             <p className="text-xs text-chill-text-muted mt-0.5">
               Due {bill.dueDayOfMonth} ·{' '}
-              {bill.isOrphaned ? (
+              {bill.scheduleName === null ? (
+                'Unassigned'
+              ) : bill.isOrphaned ? (
                 <span className="text-amber-700">
-                  {bill.scheduleName} (inactive)
+                  {bill.scheduleName}
+                  {bill.schedulePayDate !== null &&
+                    ` (${formatOrdinal(bill.schedulePayDate)})`}{' '}
+                  (inactive)
                 </span>
               ) : (
-                (bill.scheduleName ?? 'Unassigned')
+                <>
+                  {bill.scheduleName}
+                  {bill.schedulePayDate !== null &&
+                    ` (${formatOrdinal(bill.schedulePayDate)})`}
+                </>
               )}
             </p>
           </div>

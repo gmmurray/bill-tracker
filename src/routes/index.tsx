@@ -53,7 +53,7 @@ function Home() {
                   Your Active Pay Schedule
                 </p>
                 <p className="text-xs text-chill-text-muted mt-0.5">
-                  Anchored to the 1st
+                  Pay on the 1st of every month
                 </p>
               </div>
               <Badge variant="teal">3 of 4 paid</Badge>

@@ -12,7 +12,10 @@ import {
 } from '#/components/ui/alert-dialog';
 import { Button } from '#/components/ui/button';
 import { Card } from '#/components/ui/card';
-import { formatOrdinal } from '#/features/bills/bills-helpers';
+import {
+  formatOrdinal,
+  formatPayDateLabel,
+} from '#/features/bills/bills-helpers';
 import type { PaySchedule } from '#/features/pay-schedules/pay-schedules-model';
 import {
   archivedPaySchedulesCountQueryOptions,
@@ -73,7 +76,7 @@ function SchedulesArchivePage() {
                     Name
                   </th>
                   <th className="px-4 py-3 font-medium text-chill-text-muted w-32">
-                    Anchor Day
+                    Pay Date
                   </th>
                   <th className="px-4 py-3 font-medium text-chill-text-muted w-28">
                     Archived
@@ -111,7 +114,7 @@ function ArchivedScheduleRow({ schedule }: { schedule: PaySchedule }) {
     <tr className="border-b border-chill-border last:border-0">
       <td className="px-4 py-3 font-medium">{schedule.name}</td>
       <td className="px-4 py-3 text-chill-text-muted">
-        {formatOrdinal(schedule.anchorDay)}
+        {formatOrdinal(schedule.payDate)}
       </td>
       <td className="px-4 py-3 text-chill-text-muted">
         {formatShortDate(schedule.updatedAt)}
@@ -173,7 +176,7 @@ function ArchivedScheduleMobileCard({ schedule }: { schedule: PaySchedule }) {
     <li className="px-4 py-4">
       <p className="font-medium text-chill-text">{schedule.name}</p>
       <p className="text-xs text-chill-text-muted mt-0.5">
-        Anchor {formatOrdinal(schedule.anchorDay)} · Archived{' '}
+        {formatPayDateLabel(schedule.payDate)} · Archived{' '}
         {formatShortDate(schedule.updatedAt)}
       </p>
       <div className="mt-2 flex justify-end gap-1">

@@ -9,12 +9,11 @@ Active work, grouped by theme. Shipped items live in git history — strip a che
 - [ ] **Donut animation on payment** — Row 2 snapshot widgets animate the fill increment when a `bill_instance` is recorded. Small celebratory moment.
 - [ ] **Dashboard — collapse active schedule** — let the user collapse the Row 3 checklist card so the upcoming preview is reachable without scrolling past a long session list.
 - [ ] **Bill Actions drawer — empty-state illustration** — when both sections are empty the drawer reads `"You're all caught up."` Design something simple to reinforce the moment.
-- [ ] **Bill Actions nav button — icon + treatment** — spec'd as "outlined → filled with peach background" but the icon itself is TBD. Needs a design pass before build.
+- [ ] **Bill Actions nav button — active/inactive treatment** — icon is `FiCheckCircle` (settled). Remaining ask is the visual treatment: spec'd as "outlined → filled with peach background", currently just swaps `text-chill-text-muted` ↔ `bg-chill-peach`. Needs a design pass.
 
 ## Copy / labels
 
-- [ ] **"Anchor day" rename** — "anchor day" likely isn't self-explanatory to users. Pick a clearer label and roll it through the schedules forms, dashboard session header, bill detail, drawer rows.
-- [ ] **Helper text pass across the app** — sweep for places where concepts (schedules, due day, JIT payment state, auto-pay semantics, etc.) would benefit from a one-line nudge or tooltip. Not anchor-specific — anywhere users might pause.
+- [ ] **Helper text pass across the app** — sweep for places where concepts (schedules, due day, JIT payment state, auto-pay semantics, etc.) would benefit from a one-line nudge or tooltip. Anywhere users might pause.
 
 ## Create bill flow
 
@@ -27,5 +26,5 @@ Active work, grouped by theme. Shipped items live in git history — strip a che
 
 ## Deferred — awaiting repro
 
-- [ ] **Stale state after login** — dashboard occasionally renders "no active schedule" on first load post-sign-in; refresh fixes it. Suspected cause: SSR/auth-cookie timing landing `[]` in the cache with `staleTime: 5min` preventing a refetch.
+- [ ] **Stale state after login** — dashboard occasionally renders "no active schedule" on first load post-sign-in; refresh fixes it. Original staleTime-cache hypothesis is now weaker — `AuthCacheWatcher` in `__root.tsx` clears the query cache on `userId` transition (null → signed-in), so empty data shouldn't persist across a sign-in. If this still repros, investigate what happens *during* that transition (race between cache clear, query refetch, and component render).
 - [ ] **Brief flash on first dashboard load** — empty/loading state visible briefly before data arrives. Probably client-side navigation post-sign-in skipping SSR.

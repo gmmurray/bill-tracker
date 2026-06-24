@@ -7,11 +7,11 @@ export type PaySchedule = typeof paySchedules.$inferSelect;
 export const createPayScheduleSchema = createInsertSchema(paySchedules)
   .pick({
     name: true,
-    anchorDay: true,
+    payDate: true,
   })
   .extend({
     name: z.string().min(1).max(100),
-    anchorDay: z.number().int().min(1).max(31),
+    payDate: z.number().int().min(1).max(31),
   });
 
 export const updatePayScheduleSchema = createPayScheduleSchema

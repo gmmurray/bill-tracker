@@ -13,7 +13,7 @@ Page-level UX specs live alongside this in `docs/pages/`. They reference these r
 A bill's current state is *always* derived in memory from:
 
 1. The bill blueprint (`dueDayOfMonth`, optional `payScheduleId`)
-2. The schedule it's assigned to, if any (`anchorDay`, `isActive`)
+2. The schedule it's assigned to, if any (`payDate`, `isActive`)
 3. The historical payment ledger for this bill
 4. `today`
 
@@ -42,7 +42,7 @@ When the user marks a bill as paid, the system computes which cycle the payment 
 
 ## Date Math Rule
 
-Always compare `today.getDate()` against `Math.min(daysInCurrentMonth, targetDay)`, never against the raw `dueDayOfMonth` / `anchorDay`.
+Always compare `today.getDate()` against `Math.min(daysInCurrentMonth, targetDay)`, never against the raw `dueDayOfMonth` / `payDate`.
 
 This means a bill due on the 31st is correctly treated as due on the 28th in February without special-casing. `clampDayToMonth(day, year, month)` in `bills-helpers.ts` does this.
 
@@ -58,10 +58,10 @@ Each bill is in exactly one of four computed states at any moment, computed by `
 |---|---|
 | `PAID` | The nearest unpaid date is in a future month relative to `today` (i.e., every cycle through this month is on the ledger) |
 | `OVERDUE` | Unpaid for the current cycle, and `today.getDate() > clampDayToMonth(dueDayOfMonth)` |
-| `MISSED_SCHEDULE` | Unpaid, bill is on an active schedule, and `today.getDate() > clampDayToMonth(anchorDay)` while still `<= clampDayToMonth(dueDayOfMonth)` |
-| `UPCOMING` | None of the above — unpaid and neither anchor nor due day has passed |
+| `MISSED_SCHEDULE` | Unpaid, bill is on an active schedule, and `today.getDate() > clampDayToMonth(payDate)` while still `<= clampDayToMonth(dueDayOfMonth)` |
+| `UPCOMING` | None of the above — unpaid and neither pay date nor due day has passed |
 
-**`MISSED_SCHEDULE` semantics:** signals "the user's planned pay session passed but the bill isn't technically late yet." It only fires when `anchorDay < dueDayOfMonth` (pay-ahead schedules). If `anchorDay == dueDayOfMonth`, the state goes straight `UPCOMING → OVERDUE` with no intermediate window — intentional, not a bug. `OVERDUE` is the meaningful label when anchor and due coincide.
+**`MISSED_SCHEDULE` semantics:** signals "the user's planned pay session passed but the bill isn't technically late yet." It only fires when `payDate < dueDayOfMonth` (pay-ahead schedules). If `payDate == dueDayOfMonth`, the state goes straight `UPCOMING → OVERDUE` with no intermediate window — intentional, not a bug. `OVERDUE` is the meaningful label when pay date and due day coincide.
 
 **State derivation is calendar-relative.** It answers "where does this bill stand on today's calendar." The dashboard's active session checklist uses a different — session-relative — question for actionability (see [docs/pages/dashboard.md](docs/pages/dashboard.md)).
 
@@ -72,14 +72,14 @@ Each bill is in exactly one of four computed states at any moment, computed by `
 The dashboard and Bill Actions drawer both need to identify which schedule represents the user's *current pay session*. Rule:
 
 For each active schedule, compute `currentSession`:
-- If any bill on the schedule has an unpaid target cycle → `currentSession` = the most recent past anchor occurrence
-- Else → `currentSession` = the next future anchor occurrence
+- If any bill on the schedule has an unpaid target cycle → `currentSession` = the most recent past pay date occurrence
+- Else → `currentSession` = the next future pay date occurrence
 
-**Active schedule** = the schedule with the earliest `currentSession` date. Ties broken by `anchorDay` ascending, then `name` ascending.
+**Active schedule** = the schedule with the earliest `currentSession` date. Ties broken by `payDate` ascending, then `name` ascending.
 
-This rule means a schedule with unfinished work *stays* the active one even after the calendar moves past its anchor day. Sessions queue chronologically; they don't fragment between rows when calendar anchors pass.
+This rule means a schedule with unfinished work *stays* the active one even after the calendar moves past its pay date. Sessions queue chronologically; they don't fragment between rows when calendar pay dates pass.
 
-A bill on a schedule where the cycle paid in this session may differ from this calendar month — e.g., a bill due the 1st paid on a 15th-anchored schedule pays for *next* month's 1st. The session's target dueDate is `computeNearestUnpaidDueDate(bill, instances, today)` per bill, which may resolve to a future month.
+A bill on a schedule where the cycle paid in this session may differ from this calendar month — e.g., a bill due the 1st paid on a 15th-pay-date schedule pays for *next* month's 1st. The session's target dueDate is `computeNearestUnpaidDueDate(bill, instances, today)` per bill, which may resolve to a future month.
 
 ---
 

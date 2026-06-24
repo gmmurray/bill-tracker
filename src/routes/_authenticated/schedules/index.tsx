@@ -100,7 +100,7 @@ function SchedulesPage() {
   const archivedCountQuery = useArchivedPaySchedulesCount();
 
   const schedules = (schedulesQuery.data ?? []).sort(
-    (a, b) => a.anchorDay - b.anchorDay,
+    (a, b) => a.payDate - b.payDate,
   );
   const bills = billsQuery.data ?? [];
   const archivedCount = archivedCountQuery.data?.count ?? 0;
@@ -197,8 +197,7 @@ function ScheduleCard({
           <div>
             <p className="font-semibold text-chill-text">{schedule.name}</p>
             <p className="text-sm text-chill-text-muted mt-0.5">
-              {formatOrdinal(schedule.anchorDay)} of Month (anchor day{' '}
-              {schedule.anchorDay})
+              Pay on {formatOrdinal(schedule.payDate)} of every month
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -462,7 +461,7 @@ function UnassignedCard({
 
 type ScheduleFormValues = {
   name: string;
-  anchorDay: string;
+  payDate: string;
 };
 
 function ScheduleFormDrawer({
@@ -487,7 +486,7 @@ function ScheduleFormDrawer({
   } = useForm<ScheduleFormValues>({
     defaultValues: {
       name: schedule?.name ?? '',
-      anchorDay: schedule ? String(schedule.anchorDay) : '',
+      payDate: schedule ? String(schedule.payDate) : '',
     },
   });
 
@@ -495,20 +494,20 @@ function ScheduleFormDrawer({
     if (open) {
       reset({
         name: schedule?.name ?? '',
-        anchorDay: schedule ? String(schedule.anchorDay) : '',
+        payDate: schedule ? String(schedule.payDate) : '',
       });
     }
   }, [open, schedule, reset]);
 
   async function onSubmit(values: ScheduleFormValues) {
-    const anchorDay = parseInt(values.anchorDay, 10);
+    const payDate = parseInt(values.payDate, 10);
     if (mode === 'create') {
-      await createMutation.mutateAsync({ name: values.name, anchorDay });
+      await createMutation.mutateAsync({ name: values.name, payDate });
     } else if (schedule) {
       await updateMutation.mutateAsync({
         id: schedule.id,
         name: values.name,
-        anchorDay,
+        payDate,
       });
     }
     onOpenChange(false);
@@ -528,7 +527,7 @@ function ScheduleFormDrawer({
             <ResponsiveDrawerDescription>
               {mode === 'create'
                 ? 'Create a new pay schedule to group bills.'
-                : "Update this schedule's name or anchor day."}
+                : "Update this schedule's name or pay date."}
             </ResponsiveDrawerDescription>
           </div>
           <ResponsiveDrawerClose
@@ -580,21 +579,24 @@ function ScheduleFormDrawer({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="schedule-anchor-day">Anchor day</Label>
+            <Label htmlFor="schedule-pay-date">Pay date</Label>
+            <p className="text-xs text-chill-text-muted -mt-0.5">
+              The day of the month you settle this group of bills.
+            </p>
             <Input
-              id="schedule-anchor-day"
+              id="schedule-pay-date"
               type="number"
               min="1"
               max="31"
               placeholder="e.g. 1"
-              {...register('anchorDay', {
-                required: 'Anchor day is required',
+              {...register('payDate', {
+                required: 'Pay date is required',
                 min: { value: 1, message: 'Must be between 1 and 31' },
                 max: { value: 31, message: 'Must be between 1 and 31' },
               })}
             />
-            {errors.anchorDay && (
-              <p className="text-sm text-red-600">{errors.anchorDay.message}</p>
+            {errors.payDate && (
+              <p className="text-sm text-red-600">{errors.payDate.message}</p>
             )}
           </div>
         </form>

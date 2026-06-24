@@ -19,6 +19,10 @@ export function formatDueLabel(dayOfMonth: number): string {
   return `Due the ${formatOrdinal(dayOfMonth)}`;
 }
 
+export function formatPayDateLabel(payDate: number): string {
+  return `Pay date ${formatOrdinal(payDate)}`;
+}
+
 export function clampDayToMonth(
   day: number,
   year: number,
@@ -53,7 +57,7 @@ export function computeNearestUnpaidDueDate(
 
 export function deriveBillState(
   bill: Pick<Bill, 'dueDayOfMonth' | 'payScheduleId'>,
-  schedule: Pick<PaySchedule, 'anchorDay'> | null,
+  schedule: Pick<PaySchedule, 'payDate'> | null,
   instances: BillInstance[],
   today: Date,
 ): BillState {
@@ -82,12 +86,12 @@ export function deriveBillState(
   }
 
   if (schedule !== null) {
-    const clampedAnchorDay = clampDayToMonth(
-      schedule.anchorDay,
+    const clampedPayDate = clampDayToMonth(
+      schedule.payDate,
       todayYear,
       todayMonth,
     );
-    if (todayDay > clampedAnchorDay) {
+    if (todayDay > clampedPayDate) {
       return 'MISSED_SCHEDULE';
     }
   }
@@ -95,10 +99,10 @@ export function deriveBillState(
   return 'UPCOMING';
 }
 
-export function mostRecentPastSession(anchorDay: number, today: Date): Date {
+export function mostRecentPastSession(payDate: number, today: Date): Date {
   const year = today.getFullYear();
   const month = today.getMonth() + 1;
-  const clampedThisMonth = clampDayToMonth(anchorDay, year, month);
+  const clampedThisMonth = clampDayToMonth(payDate, year, month);
 
   if (today.getDate() >= clampedThisMonth) {
     return new Date(year, month - 1, clampedThisMonth);
@@ -109,14 +113,14 @@ export function mostRecentPastSession(anchorDay: number, today: Date): Date {
   return new Date(
     prevYear,
     prevMonth - 1,
-    clampDayToMonth(anchorDay, prevYear, prevMonth),
+    clampDayToMonth(payDate, prevYear, prevMonth),
   );
 }
 
-export function nextFutureSession(anchorDay: number, today: Date): Date {
+export function nextFutureSession(payDate: number, today: Date): Date {
   const year = today.getFullYear();
   const month = today.getMonth() + 1;
-  const clampedThisMonth = clampDayToMonth(anchorDay, year, month);
+  const clampedThisMonth = clampDayToMonth(payDate, year, month);
 
   if (today.getDate() < clampedThisMonth) {
     return new Date(year, month - 1, clampedThisMonth);
@@ -127,7 +131,7 @@ export function nextFutureSession(anchorDay: number, today: Date): Date {
   return new Date(
     nextYear,
     nextMonth - 1,
-    clampDayToMonth(anchorDay, nextYear, nextMonth),
+    clampDayToMonth(payDate, nextYear, nextMonth),
   );
 }
 
@@ -183,13 +187,13 @@ export function selectActiveSchedule(
 
   for (const schedule of active) {
     const scheduleBills = bills.filter(b => b.payScheduleId === schedule.id);
-    const past = mostRecentPastSession(schedule.anchorDay, today);
+    const past = mostRecentPastSession(schedule.payDate, today);
     const currentSession = isScheduleSessionComplete(
       scheduleBills,
       past,
       instancesByBillId,
     )
-      ? nextFutureSession(schedule.anchorDay, today)
+      ? nextFutureSession(schedule.payDate, today)
       : past;
 
     if (bestSchedule === null) {
@@ -204,8 +208,8 @@ export function selectActiveSchedule(
       bestSession = currentSession;
     } else if (diff === 0) {
       if (
-        schedule.anchorDay < bestSchedule.anchorDay ||
-        (schedule.anchorDay === bestSchedule.anchorDay &&
+        schedule.payDate < bestSchedule.payDate ||
+        (schedule.payDate === bestSchedule.payDate &&
           schedule.name < bestSchedule.name)
       ) {
         bestSchedule = schedule;
