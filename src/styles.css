@@ -79,8 +79,9 @@
   --color-chill-purple-light: #efeaff; /* Subtle checklist selections */
 
   /* Critical Overdue Bills */
-  --color-chill-peach: #fbe5d4; /* Full-width emergency card background */
-  --color-chill-peach-border: #f3d2bb; /* Subtle borders for warning elements */
+  --color-chill-coral: #d97757; /* Terracotta accent for OVERDUE borders/badges */
+  --color-chill-peach: #fbe5d4; /* Soft peach for subtle warning surfaces (nav button active, toast) */
+  --color-chill-peach-border: #f3d2bb; /* Legacy peach border (kept for toast + nav button) */
 
   /* Chill Score & Good Standing */
   --color-chill-teal: #71c9c1; /* Chill Score progress & slider thumb */

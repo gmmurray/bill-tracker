@@ -233,11 +233,11 @@ export function BillActionsDrawer() {
               <>
                 {attention.length > 0 && (
                   <section>
-                    <div className="flex items-center gap-2 px-6 py-3 bg-chill-peach border-b border-chill-peach-border">
+                    <div className="flex items-center gap-2 px-6 py-3 bg-chill-peach border-b border-chill-peach-border border-l-4 border-l-chill-coral">
                       <span className="text-sm font-semibold text-chill-text">
                         Needs attention
                       </span>
-                      <Badge variant="peach">{attention.length}</Badge>
+                      <Badge variant="coral">{attention.length}</Badge>
                     </div>
                     <ul>
                       {attention.map(({ bill, state }) => (
@@ -330,11 +330,9 @@ function AttentionRow({
         </p>
       </div>
       {state === 'OVERDUE' ? (
-        <Badge variant="peach">Overdue</Badge>
+        <Badge variant="coral">Overdue</Badge>
       ) : (
-        <Badge className="bg-amber-100 text-amber-800 border border-amber-300">
-          Missed schedule
-        </Badge>
+        <Badge variant="amber">Missed schedule</Badge>
       )}
       <Button variant="pay" size="sm" onClick={onPay}>
         Mark Paid

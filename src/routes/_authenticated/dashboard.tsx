@@ -352,10 +352,10 @@ function BillRow({
         'flex items-center gap-3 px-4 py-3 border-b border-chill-border last:border-0',
         showStateBackground &&
           state === 'MISSED_SCHEDULE' &&
-          'bg-amber-50 border-l-2 border-l-amber-400',
+          'border-l-4 border-l-amber-500',
         showStateBackground &&
           state === 'OVERDUE' &&
-          'bg-chill-peach border-l-2 border-l-chill-peach-border',
+          'border-l-4 border-l-chill-coral',
       )}
     >
       <div className="flex-1 min-w-0">
