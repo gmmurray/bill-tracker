@@ -153,17 +153,19 @@ function DashboardPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="p-6 flex flex-col items-center">
+          <Card className="p-6">
             <Donut
               fraction={totalCount > 0 ? paidCount / totalCount : 0}
+              periodLabel="This month"
               centerLabel={`${paidCount} / ${totalCount}`}
               subLabel="bills paid"
               variant="teal"
             />
           </Card>
-          <Card className="p-6 flex flex-col items-center">
+          <Card className="p-6">
             <Donut
               fraction={totalCents > 0 ? paidCents / totalCents : 0}
+              periodLabel="This month"
               centerLabel={formatCurrency(paidCents)}
               subLabel={`of ${formatCurrency(totalCents)}`}
               variant="purple"
@@ -287,11 +289,13 @@ const donutColors = {
 
 function Donut({
   fraction,
+  periodLabel,
   centerLabel,
   subLabel,
   variant,
 }: {
   fraction: number;
+  periodLabel: string;
   centerLabel: string;
   subLabel: string;
   variant: keyof typeof donutColors;
@@ -302,7 +306,8 @@ function Donut({
   const dash = safeFraction * circumference;
   const colors = donutColors[variant];
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-3">
+      <span className="text-xs text-chill-text-muted">{periodLabel}</span>
       <svg viewBox="0 0 100 100" className="w-32 h-32 -rotate-90">
         <circle
           cx="50"
@@ -324,7 +329,7 @@ function Donut({
         />
       </svg>
       <div className="text-center">
-        <div className="text-lg font-semibold text-chill-text">
+        <div className="text-lg font-semibold text-chill-text tabular-nums">
           {centerLabel}
         </div>
         <div className="text-xs text-chill-text-muted">{subLabel}</div>
