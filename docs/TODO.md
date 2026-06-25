@@ -4,8 +4,7 @@ Active work, grouped by theme. Shipped items live in git history — strip a che
 
 ## UI / UX polish
 
-- [ ] **Error / warning color redesign** — current peach (OVERDUE) and amber-50 (MISSED_SCHEDULE) backgrounds feel too cozy to read as urgent, and the peach fill clashes with the white card header above it. Likely move from background fills to outlined treatments. Both states should be reconsidered together since the visual language is shared between the dashboard row tints, the attention banner, and any future inline errors.
-- [ ] **Sweep one-off SVGs → `react-icons/fi`** — replace hand-rolled `<svg>` elements with Feather equivalents and extract any duplicates to shared components.
+- [ ] **Dashboard Row 2 donut refresh** — two improvements bundled: (1) add a period label to each donut so the scope is explicit (current donuts are calendar-month scoped but say nothing about it — labels like "This month" / "This session" / etc. depending on what we eventually surface); (2) shift the layout from donut-stacked-over-text to donut-left + text-right, side-by-side. Slimmer card, more room for labels, reads as a more distinguished card composition.
 - [ ] **Donut animation on payment** — Row 2 snapshot widgets animate the fill increment when a `bill_instance` is recorded. Small celebratory moment.
 - [ ] **Dashboard — collapse active schedule** — let the user collapse the Row 3 checklist card so the upcoming preview is reachable without scrolling past a long session list.
 - [ ] **Bill Actions drawer — empty-state illustration** — when both sections are empty the drawer reads `"You're all caught up."` Design something simple to reinforce the moment.

@@ -1,5 +1,6 @@
 import { DropdownMenu as DropdownMenuPrimitive } from 'radix-ui';
 import * as React from 'react';
+import { FiChevronRight } from 'react-icons/fi';
 import { cn } from '#/lib/utils';
 
 export const DropdownMenu = DropdownMenuPrimitive.Root;
@@ -86,21 +87,11 @@ export const DropdownMenuSubTrigger = React.forwardRef<
     {...props}
   >
     {children}
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <FiChevronRight
+      size={16}
       className="shrink-0 text-chill-text-muted"
       aria-hidden="true"
-    >
-      <path d="m9 18 6-6-6-6" />
-    </svg>
+    />
   </DropdownMenuPrimitive.SubTrigger>
 ));
 DropdownMenuSubTrigger.displayName = 'DropdownMenuSubTrigger';

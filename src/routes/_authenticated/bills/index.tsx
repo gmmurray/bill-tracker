@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
-import { FiRepeat } from 'react-icons/fi';
+import { FiRepeat, FiX } from 'react-icons/fi';
 import { z } from 'zod';
 import {
   AlertDialog,
@@ -449,20 +449,7 @@ function QuickAddDrawer({
             )}
             aria-label="Close"
           >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 18 18"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                d="M14 4L4 14M4 4l10 10"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            </svg>
+            <FiX size={18} aria-hidden="true" />
           </ResponsiveDrawerClose>
         </ResponsiveDrawerHeader>
 

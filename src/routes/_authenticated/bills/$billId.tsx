@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import * as React from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { FiX } from 'react-icons/fi';
 import { z } from 'zod';
 import { PayBillDialog } from '#/components/pay-bill-dialog';
 import {
@@ -80,25 +81,6 @@ function formatPaidAt(isoDatetime: string) {
     hour: '2-digit',
     minute: '2-digit',
   });
-}
-
-function CloseIcon() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 18 18"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M14 4L4 14M4 4l10 10"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
 }
 
 function BillDetailPage() {
@@ -758,7 +740,7 @@ function EditAmountDrawer({
             )}
             aria-label="Close"
           >
-            <CloseIcon />
+            <FiX size={18} aria-hidden="true" />
           </ResponsiveDrawerClose>
         </ResponsiveDrawerHeader>
 
@@ -892,7 +874,7 @@ function LogHistoricalPaymentDrawer({
             )}
             aria-label="Close"
           >
-            <CloseIcon />
+            <FiX size={18} aria-hidden="true" />
           </ResponsiveDrawerClose>
         </ResponsiveDrawerHeader>
 

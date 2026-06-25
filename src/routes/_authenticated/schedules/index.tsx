@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
+import { FiMoreVertical, FiX } from 'react-icons/fi';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -83,11 +84,7 @@ const DotsButton = React.forwardRef<
     )}
     {...props}
   >
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-      <circle cx="12" cy="5" r="1.5" />
-      <circle cx="12" cy="12" r="1.5" />
-      <circle cx="12" cy="19" r="1.5" />
-    </svg>
+    <FiMoreVertical size={16} aria-hidden="true" />
   </button>
 ));
 DotsButton.displayName = 'DotsButton';
@@ -538,20 +535,7 @@ function ScheduleFormDrawer({
             )}
             aria-label="Close"
           >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 18 18"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                d="M14 4L4 14M4 4l10 10"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            </svg>
+            <FiX size={18} aria-hidden="true" />
           </ResponsiveDrawerClose>
         </ResponsiveDrawerHeader>
 
@@ -686,20 +670,7 @@ function BulkAssignDrawer({
             )}
             aria-label="Close"
           >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 18 18"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                d="M14 4L4 14M4 4l10 10"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            </svg>
+            <FiX size={18} aria-hidden="true" />
           </ResponsiveDrawerClose>
         </ResponsiveDrawerHeader>
 

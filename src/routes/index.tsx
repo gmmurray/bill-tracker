@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { FiCheck } from 'react-icons/fi';
 import { Badge } from '#/components/ui/badge';
 import { Button } from '#/components/ui/button';
 import { Card, CardFooter, CardHeader } from '#/components/ui/card';
@@ -121,21 +122,7 @@ function BillRow({
 function FilledCheck() {
   return (
     <div className="w-4 h-4 rounded bg-chill-teal flex items-center justify-center shrink-0">
-      <svg
-        width="10"
-        height="8"
-        viewBox="0 0 10 8"
-        fill="none"
-        aria-hidden="true"
-      >
-        <path
-          d="M1 4L3.5 6.5L9 1"
-          stroke="white"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
+      <FiCheck size={10} className="text-white" aria-hidden="true" />
     </div>
   );
 }

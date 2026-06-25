@@ -1,5 +1,6 @@
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import * as React from 'react';
+import { FiX } from 'react-icons/fi';
 import { PayBillDialog } from '#/components/pay-bill-dialog';
 import { Badge } from '#/components/ui/badge';
 import { Button } from '#/components/ui/button';
@@ -162,25 +163,6 @@ export function useBillActionsState(): BillActionsState {
   return ctx;
 }
 
-function CloseIcon() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 18 18"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M14 4L4 14M4 4l10 10"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 export function BillActionsDrawer() {
   const { actions = false } = useSearch({ from: '__root__' });
   const navigate = useNavigate();
@@ -220,7 +202,7 @@ export function BillActionsDrawer() {
               )}
               aria-label="Close"
             >
-              <CloseIcon />
+              <FiX size={18} aria-hidden="true" />
             </ResponsiveDrawerClose>
           </ResponsiveDrawerHeader>
 

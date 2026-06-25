@@ -2,6 +2,7 @@ import { UserButton } from '@clerk/tanstack-react-start';
 import { Link } from '@tanstack/react-router';
 import type { PropsWithChildren } from 'react';
 import * as React from 'react';
+import { FiCalendar, FiFileText, FiGrid, FiMenu } from 'react-icons/fi';
 import { AttentionBanner } from '#/components/attention-banner';
 import { BillActionsNavButton } from '#/components/bill-actions-nav-button';
 
@@ -40,7 +41,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
             className="lg:hidden p-1 rounded-md text-chill-text-muted hover:bg-chill-purple-light transition-colors"
             aria-label="Open menu"
           >
-            <HamburgerIcon />
+            <FiMenu size={20} aria-hidden="true" />
           </button>
           <span className="lg:hidden flex-1 font-semibold text-xl tracking-tight text-center">
             Bill<span className="text-chill-ice">Chill.</span>
@@ -66,13 +67,25 @@ function SidebarContents({ onLinkClick }: { onLinkClick?: () => void }) {
       </div>
 
       <nav className="flex-1 flex flex-col gap-1">
-        <NavLink to="/dashboard" icon={<DashboardIcon />} onClick={onLinkClick}>
+        <NavLink
+          to="/dashboard"
+          icon={<FiGrid size={16} aria-hidden="true" />}
+          onClick={onLinkClick}
+        >
           Dashboard
         </NavLink>
-        <NavLink to="/bills" icon={<BillsIcon />} onClick={onLinkClick}>
+        <NavLink
+          to="/bills"
+          icon={<FiFileText size={16} aria-hidden="true" />}
+          onClick={onLinkClick}
+        >
           Bills
         </NavLink>
-        <NavLink to="/schedules" icon={<SchedulesIcon />} onClick={onLinkClick}>
+        <NavLink
+          to="/schedules"
+          icon={<FiCalendar size={16} aria-hidden="true" />}
+          onClick={onLinkClick}
+        >
           Schedules
         </NavLink>
       </nav>
@@ -108,159 +121,5 @@ function NavLink({
       {icon}
       {children}
     </Link>
-  );
-}
-
-function DashboardIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      aria-hidden="true"
-    >
-      <rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor" />
-      <rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" />
-      <rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" />
-      <rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" />
-    </svg>
-  );
-}
-
-function BillsIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      aria-hidden="true"
-    >
-      <rect
-        x="3"
-        y="1"
-        width="10"
-        height="14"
-        rx="1.5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <line
-        x1="5.5"
-        y1="5.5"
-        x2="10.5"
-        y2="5.5"
-        stroke="currentColor"
-        strokeWidth="1.25"
-        strokeLinecap="round"
-      />
-      <line
-        x1="5.5"
-        y1="8"
-        x2="10.5"
-        y2="8"
-        stroke="currentColor"
-        strokeWidth="1.25"
-        strokeLinecap="round"
-      />
-      <line
-        x1="5.5"
-        y1="10.5"
-        x2="8.5"
-        y2="10.5"
-        stroke="currentColor"
-        strokeWidth="1.25"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function SchedulesIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      aria-hidden="true"
-    >
-      <rect
-        x="1"
-        y="3"
-        width="14"
-        height="12"
-        rx="1.5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <line
-        x1="1"
-        y1="7"
-        x2="15"
-        y2="7"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <line
-        x1="5"
-        y1="1"
-        x2="5"
-        y2="5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <line
-        x1="11"
-        y1="1"
-        x2="11"
-        y2="5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function HamburgerIcon() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      aria-hidden="true"
-    >
-      <line
-        x1="3"
-        y1="6"
-        x2="17"
-        y2="6"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <line
-        x1="3"
-        y1="10"
-        x2="17"
-        y2="10"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <line
-        x1="3"
-        y1="14"
-        x2="17"
-        y2="14"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
   );
 }
