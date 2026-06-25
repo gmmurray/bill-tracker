@@ -155,18 +155,22 @@ function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card className="p-6">
             <Donut
-              fraction={totalCount > 0 ? paidCount / totalCount : 0}
+              value={paidCount}
+              total={totalCount}
               periodLabel="This month"
-              centerLabel={`${paidCount} / ${totalCount}`}
+              formatValue={v => `${Math.round(v)} / ${totalCount}`}
+              formatDelta={d => `+${Math.round(d)}`}
               subLabel="bills paid"
               variant="teal"
             />
           </Card>
           <Card className="p-6">
             <Donut
-              fraction={totalCents > 0 ? paidCents / totalCents : 0}
+              value={paidCents}
+              total={totalCents}
               periodLabel="This month"
-              centerLabel={formatCurrency(paidCents)}
+              formatValue={v => formatCurrency(Math.round(v))}
+              formatDelta={d => `+${formatCurrency(Math.round(d))}`}
               subLabel={`of ${formatCurrency(totalCents)}`}
               variant="purple"
             />
@@ -288,49 +292,119 @@ const donutColors = {
 } as const;
 
 function Donut({
-  fraction,
+  value,
+  total,
   periodLabel,
-  centerLabel,
+  formatValue,
+  formatDelta,
   subLabel,
   variant,
 }: {
-  fraction: number;
+  value: number;
+  total: number;
   periodLabel: string;
-  centerLabel: string;
+  formatValue: (v: number) => string;
+  formatDelta?: (delta: number) => string;
   subLabel: string;
   variant: keyof typeof donutColors;
 }) {
+  const [displayValue, setDisplayValue] = React.useState(value);
+  const displayValueRef = React.useRef(value);
+  const prevValueRef = React.useRef(value);
+  const [floater, setFloater] = React.useState<{
+    text: string;
+    key: number;
+  } | null>(null);
+  const formatDeltaRef = React.useRef(formatDelta);
+  formatDeltaRef.current = formatDelta;
+
+  React.useEffect(() => {
+    const start = displayValueRef.current;
+    const end = value;
+    if (start === end) return;
+
+    const logicalDelta = end - prevValueRef.current;
+    prevValueRef.current = end;
+
+    let floaterTimeoutId: ReturnType<typeof setTimeout> | undefined;
+    if (formatDeltaRef.current && logicalDelta > 0) {
+      const text = formatDeltaRef.current(logicalDelta);
+      setFloater({ text, key: Date.now() });
+      floaterTimeoutId = setTimeout(() => setFloater(null), 900);
+    }
+
+    let rafId: number | undefined;
+    const duration = 700;
+    const startTime = performance.now();
+
+    function tick(now: number) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - (1 - progress) ** 3;
+      const current = start + (end - start) * eased;
+      displayValueRef.current = current;
+      setDisplayValue(current);
+      if (progress < 1) {
+        rafId = requestAnimationFrame(tick);
+      } else {
+        displayValueRef.current = end;
+        setDisplayValue(end);
+      }
+    }
+
+    rafId = requestAnimationFrame(tick);
+
+    return () => {
+      if (rafId !== undefined) cancelAnimationFrame(rafId);
+      if (floaterTimeoutId !== undefined) clearTimeout(floaterTimeoutId);
+    };
+  }, [value]);
+
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
+  const fraction = total > 0 ? displayValue / total : 0;
   const safeFraction = Math.max(0, Math.min(1, fraction));
   const dash = safeFraction * circumference;
   const colors = donutColors[variant];
+
   return (
     <div className="flex flex-col items-center gap-3">
       <span className="text-xs text-chill-text-muted">{periodLabel}</span>
-      <svg viewBox="0 0 100 100" className="w-32 h-32 -rotate-90">
-        <circle
-          cx="50"
-          cy="50"
-          r={radius}
-          fill="none"
-          stroke={colors.track}
-          strokeWidth="10"
-        />
-        <circle
-          cx="50"
-          cy="50"
-          r={radius}
-          fill="none"
-          stroke={colors.fill}
-          strokeWidth="10"
-          strokeDasharray={`${dash} ${circumference - dash}`}
-          strokeLinecap="round"
-        />
-      </svg>
+      <div className="relative">
+        <svg viewBox="0 0 100 100" className="w-32 h-32 -rotate-90">
+          <circle
+            cx="50"
+            cy="50"
+            r={radius}
+            fill="none"
+            stroke={colors.track}
+            strokeWidth="10"
+          />
+          <circle
+            cx="50"
+            cy="50"
+            r={radius}
+            fill="none"
+            stroke={colors.fill}
+            strokeWidth="10"
+            strokeDasharray={`${dash} ${circumference - dash}`}
+            strokeLinecap="round"
+          />
+        </svg>
+        {floater && (
+          <span
+            key={floater.key}
+            aria-hidden="true"
+            style={{ color: colors.fill }}
+            className="absolute left-1/2 top-1/2 text-sm font-semibold pointer-events-none animate-donut-float-up tabular-nums"
+          >
+            {floater.text}
+          </span>
+        )}
+      </div>
       <div className="text-center">
         <div className="text-lg font-semibold text-chill-text tabular-nums">
-          {centerLabel}
+          {formatValue(displayValue)}
         </div>
         <div className="text-xs text-chill-text-muted">{subLabel}</div>
       </div>

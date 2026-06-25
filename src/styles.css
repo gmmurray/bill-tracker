@@ -67,6 +67,24 @@
   animation: router-progress 1s ease-in-out infinite;
 }
 
+@keyframes donut-float-up {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 4px));
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% - 44px));
+  }
+}
+
+@utility animate-donut-float-up {
+  animation: donut-float-up 900ms ease-out forwards;
+}
+
 @theme {
   /* --- BillChill Color Palette --- */
 
