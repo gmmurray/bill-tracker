@@ -315,6 +315,7 @@ function Donut({
     text: string;
     key: number;
   } | null>(null);
+  const [pulseKey, setPulseKey] = React.useState(0);
   const formatDeltaRef = React.useRef(formatDelta);
   formatDeltaRef.current = formatDelta;
 
@@ -324,13 +325,20 @@ function Donut({
     if (start === end) return;
 
     const logicalDelta = end - prevValueRef.current;
+    const isCompleting =
+      total > 0 && prevValueRef.current < total && end >= total;
     prevValueRef.current = end;
 
     let floaterTimeoutId: ReturnType<typeof setTimeout> | undefined;
-    if (formatDeltaRef.current && logicalDelta > 0) {
-      const text = formatDeltaRef.current(logicalDelta);
-      setFloater({ text, key: Date.now() });
-      floaterTimeoutId = setTimeout(() => setFloater(null), 900);
+    if (logicalDelta > 0) {
+      const text = isCompleting
+        ? 'Done!'
+        : (formatDeltaRef.current?.(logicalDelta) ?? null);
+      if (text !== null) {
+        setFloater({ text, key: Date.now() });
+        floaterTimeoutId = setTimeout(() => setFloater(null), 900);
+      }
+      setPulseKey(k => k + 1);
     }
 
     let rafId: number | undefined;
@@ -358,7 +366,7 @@ function Donut({
       if (rafId !== undefined) cancelAnimationFrame(rafId);
       if (floaterTimeoutId !== undefined) clearTimeout(floaterTimeoutId);
     };
-  }, [value]);
+  }, [value, total]);
 
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
@@ -371,26 +379,31 @@ function Donut({
     <div className="flex flex-col items-center gap-3">
       <span className="text-xs text-chill-text-muted">{periodLabel}</span>
       <div className="relative">
-        <svg viewBox="0 0 100 100" className="w-32 h-32 -rotate-90">
-          <circle
-            cx="50"
-            cy="50"
-            r={radius}
-            fill="none"
-            stroke={colors.track}
-            strokeWidth="10"
-          />
-          <circle
-            cx="50"
-            cy="50"
-            r={radius}
-            fill="none"
-            stroke={colors.fill}
-            strokeWidth="10"
-            strokeDasharray={`${dash} ${circumference - dash}`}
-            strokeLinecap="round"
-          />
-        </svg>
+        <div
+          key={pulseKey}
+          className={pulseKey > 0 ? 'animate-donut-pulse' : ''}
+        >
+          <svg viewBox="0 0 100 100" className="w-32 h-32 -rotate-90">
+            <circle
+              cx="50"
+              cy="50"
+              r={radius}
+              fill="none"
+              stroke={colors.track}
+              strokeWidth="10"
+            />
+            <circle
+              cx="50"
+              cy="50"
+              r={radius}
+              fill="none"
+              stroke={colors.fill}
+              strokeWidth="10"
+              strokeDasharray={`${dash} ${circumference - dash}`}
+              strokeLinecap="round"
+            />
+          </svg>
+        </div>
         {floater && (
           <span
             key={floater.key}
