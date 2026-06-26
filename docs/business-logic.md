@@ -34,7 +34,9 @@ When the user marks a bill as paid, the system computes which cycle the payment 
 
 **The walk does not look backward.** If the user adds a bill mid-month and skips paying it for the past two months, those past cycles are never "rediscovered" by the nearest-unpaid logic. Recording payments for past cycles is done explicitly via the **Log Historical Payment** flow on the bill detail page, which sets `dueDate` directly without invoking nearest-unpaid.
 
-**Implementation:** `computeNearestUnpaidDueDate(dueDayOfMonth, instances, today)` in [src/features/bills/bills-helpers.ts](src/features/bills/bills-helpers.ts).
+**The walk also skips cycles that predate `bill.createdAt`.** A bill added on June 25 with `dueDayOfMonth = 11` won't surface June 11 as overdue — the bill didn't exist for that cycle, so it isn't owed for it. The walk advances to July 11 (the first cycle on or after creation), which makes the bill derive to `UPCOMING` / `PAID` depending on calendar position. Without this guard, mid-month additions with a past-day due-day flash as `OVERDUE` from the moment they're created.
+
+**Implementation:** `computeNearestUnpaidDueDate(dueDayOfMonth, instances, today, createdAt?)` in [src/features/bills/bills-helpers.ts](src/features/bills/bills-helpers.ts). `createdAt` is optional only for legacy call sites; production callers (state derivation, payment recording, Pay dialog) always pass it.
 
 **UI contract:** any UI that triggers a payment must display which `dueDate` the payment is being applied to *before* the user confirms. The Pay confirmation dialog (dashboard, action panel) shows `"Applying to: {formattedDueDate}"`. Skipping this contract risks the user paying for a cycle they didn't intend.
 

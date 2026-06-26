@@ -283,6 +283,7 @@ export const recordBillPayment = createServerFn({ method: 'POST' })
       bill.dueDayOfMonth,
       existingInstances,
       new Date(),
+      new Date(bill.createdAt),
     );
 
     try {

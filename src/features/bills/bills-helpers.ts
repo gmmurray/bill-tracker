@@ -36,15 +36,21 @@ export function computeNearestUnpaidDueDate(
   dueDayOfMonth: number,
   existingInstances: BillInstance[],
   today: Date,
+  createdAt?: Date,
 ): string {
   const paidDates = new Set(existingInstances.map(i => i.dueDate));
+  const createdAtDateStr = createdAt
+    ? `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, '0')}-${String(createdAt.getDate()).padStart(2, '0')}`
+    : null;
   let year = today.getFullYear();
   let month = today.getMonth() + 1;
 
   for (;;) {
     const day = clampDayToMonth(dueDayOfMonth, year, month);
     const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    if (!paidDates.has(dateStr)) {
+    const predatesBill =
+      createdAtDateStr !== null && dateStr < createdAtDateStr;
+    if (!predatesBill && !paidDates.has(dateStr)) {
       return dateStr;
     }
     month += 1;
@@ -56,7 +62,7 @@ export function computeNearestUnpaidDueDate(
 }
 
 export function deriveBillState(
-  bill: Pick<Bill, 'dueDayOfMonth' | 'payScheduleId'>,
+  bill: Pick<Bill, 'dueDayOfMonth' | 'payScheduleId' | 'createdAt'>,
   schedule: Pick<PaySchedule, 'payDate'> | null,
   instances: BillInstance[],
   today: Date,
@@ -65,6 +71,7 @@ export function deriveBillState(
     bill.dueDayOfMonth,
     instances,
     today,
+    new Date(bill.createdAt),
   );
   const [npYear, npMonth] = nearestUnpaid.split('-').map(Number);
   const todayYear = today.getFullYear();

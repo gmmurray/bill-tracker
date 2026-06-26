@@ -18,7 +18,10 @@ import { useRecordBillPayment } from '#/features/bills/bills-queries';
 import { getErrorMessage } from '#/lib/utils';
 
 type Props = {
-  bill: Pick<Bill, 'id' | 'name' | 'dueDayOfMonth' | 'amountExpected'>;
+  bill: Pick<
+    Bill,
+    'id' | 'name' | 'dueDayOfMonth' | 'amountExpected' | 'createdAt'
+  >;
   instances: BillInstance[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -50,8 +53,13 @@ export function PayBillDialog({ bill, instances, open, onOpenChange }: Props) {
 
   const targetDueDate = React.useMemo(
     () =>
-      computeNearestUnpaidDueDate(bill.dueDayOfMonth, instances, new Date()),
-    [bill.dueDayOfMonth, instances],
+      computeNearestUnpaidDueDate(
+        bill.dueDayOfMonth,
+        instances,
+        new Date(),
+        new Date(bill.createdAt),
+      ),
+    [bill.dueDayOfMonth, bill.createdAt, instances],
   );
 
   const [recordedAt, setRecordedAt] = React.useState(() => new Date());

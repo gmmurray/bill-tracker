@@ -44,7 +44,10 @@ export const Route = createFileRoute('/_authenticated/dashboard')({
 });
 
 type SelectedBill = {
-  bill: Pick<Bill, 'id' | 'name' | 'dueDayOfMonth' | 'amountExpected'>;
+  bill: Pick<
+    Bill,
+    'id' | 'name' | 'dueDayOfMonth' | 'amountExpected' | 'createdAt'
+  >;
   instances: BillInstance[];
 };
 
@@ -68,14 +71,27 @@ function DashboardPage() {
   const todayMonth = today.getMonth() + 1;
   const todayDay = today.getDate();
 
-  // Row 2 metrics — calendar-month-scoped
+  // Row 2 metrics — calendar-month-scoped.
+  // A bill is "relevant this month" if either (a) it has an instance this month,
+  // or (b) it's not skip-PAID (i.e., it still owes for some cycle on or before today).
+  // Skip-PAID bills — created mid-month with a past due day — never owed for this
+  // month at all, so they shouldn't count toward the donut totals.
   const monthStart = `${todayYear}-${String(todayMonth).padStart(2, '0')}-`;
   const monthInstances = allInstances.filter(i =>
     i.dueDate.startsWith(monthStart),
   );
-  const totalCount = bills.length;
-  const totalCents = bills.reduce((s, b) => s + b.amountExpected, 0);
   const paidBillIds = new Set(monthInstances.map(i => i.billId));
+  const billsRelevantThisMonth = bills.filter(bill => {
+    if (paidBillIds.has(bill.id)) return true;
+    const schedule = schedules.find(s => s.id === bill.payScheduleId) ?? null;
+    const instances = instancesByBillId.get(bill.id) ?? [];
+    return deriveBillState(bill, schedule, instances, today) !== 'PAID';
+  });
+  const totalCount = billsRelevantThisMonth.length;
+  const totalCents = billsRelevantThisMonth.reduce(
+    (s, b) => s + b.amountExpected,
+    0,
+  );
   const paidCount = paidBillIds.size;
   const paidCents = monthInstances.reduce((s, i) => s + i.amountActual, 0);
 
@@ -126,7 +142,10 @@ function DashboardPage() {
     .slice(0, 7);
 
   function openPayDialog(
-    bill: Pick<Bill, 'id' | 'name' | 'dueDayOfMonth' | 'amountExpected'>,
+    bill: Pick<
+      Bill,
+      'id' | 'name' | 'dueDayOfMonth' | 'amountExpected' | 'createdAt'
+    >,
   ) {
     setSelectedBill({ bill, instances: instancesByBillId.get(bill.id) ?? [] });
   }

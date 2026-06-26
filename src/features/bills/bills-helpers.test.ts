@@ -211,6 +211,30 @@ describe('computeNearestUnpaidDueDate', () => {
     const result = computeNearestUnpaidDueDate(15, instances, today);
     expect(result).toBe('2027-01-15');
   });
+
+  it('skips cycles that predate bill createdAt (bill added mid-month)', () => {
+    // Bill created Jun 25, due 11. June 11 predates createdAt → should return July 11
+    const today = new Date(2026, 5, 25);
+    const createdAt = new Date(2026, 5, 25);
+    const result = computeNearestUnpaidDueDate(11, [], today, createdAt);
+    expect(result).toBe('2026-07-11');
+  });
+
+  it('keeps a cycle whose date equals createdAt date (same-day creation)', () => {
+    // Bill created Jun 25, due 25. June 25 equals createdAt → not skipped, returned
+    const today = new Date(2026, 5, 25);
+    const createdAt = new Date(2026, 5, 25);
+    const result = computeNearestUnpaidDueDate(25, [], today, createdAt);
+    expect(result).toBe('2026-06-25');
+  });
+
+  it('still skips predated cycle even when no instances exist', () => {
+    // Bill created Jun 25, due 11. No instances. Skip June 11 → July 11
+    const today = new Date(2026, 5, 25);
+    const createdAt = new Date(2026, 5, 25);
+    const result = computeNearestUnpaidDueDate(11, [], today, createdAt);
+    expect(result).toBe('2026-07-11');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -223,7 +247,11 @@ describe('deriveBillState', () => {
   it('returns PAID when an instance exists for current month due date', () => {
     // Today: June 6 2026, due day 15 → nearest unpaid is July → PAID
     const today = new Date(2026, 5, 6);
-    const bill = { dueDayOfMonth: 15, payScheduleId: 'sched-1' };
+    const bill = {
+      dueDayOfMonth: 15,
+      payScheduleId: 'sched-1',
+      createdAt: '2025-01-01T00:00:00.000Z',
+    };
     const schedule = { payDate: 1 };
     const instances = [makeInstance(BILL_ID, '2026-06-15')];
     expect(deriveBillState(bill, schedule, instances, today)).toBe('PAID');
@@ -232,14 +260,22 @@ describe('deriveBillState', () => {
   it('returns OVERDUE when unpaid and today is past the due day', () => {
     // Today: June 10 2026, due day 5
     const today = new Date(2026, 5, 10);
-    const bill = { dueDayOfMonth: 5, payScheduleId: null };
+    const bill = {
+      dueDayOfMonth: 5,
+      payScheduleId: null,
+      createdAt: '2025-01-01T00:00:00.000Z',
+    };
     expect(deriveBillState(bill, null, [], today)).toBe('OVERDUE');
   });
 
   it('returns MISSED_SCHEDULE when past pay date but before due day with a schedule', () => {
     // Today: June 10 2026, pay date 5, due day 20
     const today = new Date(2026, 5, 10);
-    const bill = { dueDayOfMonth: 20, payScheduleId: 'sched-1' };
+    const bill = {
+      dueDayOfMonth: 20,
+      payScheduleId: 'sched-1',
+      createdAt: '2025-01-01T00:00:00.000Z',
+    };
     const schedule = { payDate: 5 };
     expect(deriveBillState(bill, schedule, [], today)).toBe('MISSED_SCHEDULE');
   });
@@ -247,7 +283,11 @@ describe('deriveBillState', () => {
   it('returns UPCOMING when today is before both pay date and due day', () => {
     // Today: June 3 2026, pay date 10, due day 20
     const today = new Date(2026, 5, 3);
-    const bill = { dueDayOfMonth: 20, payScheduleId: 'sched-1' };
+    const bill = {
+      dueDayOfMonth: 20,
+      payScheduleId: 'sched-1',
+      createdAt: '2025-01-01T00:00:00.000Z',
+    };
     const schedule = { payDate: 10 };
     expect(deriveBillState(bill, schedule, [], today)).toBe('UPCOMING');
   });
@@ -255,21 +295,33 @@ describe('deriveBillState', () => {
   it('returns UPCOMING (not MISSED_SCHEDULE) when past pay date but no schedule assigned', () => {
     // Today: June 10 2026, due day 20, no schedule
     const today = new Date(2026, 5, 10);
-    const bill = { dueDayOfMonth: 20, payScheduleId: null };
+    const bill = {
+      dueDayOfMonth: 20,
+      payScheduleId: null,
+      createdAt: '2025-01-01T00:00:00.000Z',
+    };
     expect(deriveBillState(bill, null, [], today)).toBe('UPCOMING');
   });
 
   it('returns OVERDUE (not MISSED_SCHEDULE) when past due day and no schedule assigned', () => {
     // Today: June 10 2026, due day 5, no schedule
     const today = new Date(2026, 5, 10);
-    const bill = { dueDayOfMonth: 5, payScheduleId: null };
+    const bill = {
+      dueDayOfMonth: 5,
+      payScheduleId: null,
+      createdAt: '2025-01-01T00:00:00.000Z',
+    };
     expect(deriveBillState(bill, null, [], today)).toBe('OVERDUE');
   });
 
   it('correctly derives state against clamped due date in February', () => {
     // Today: Feb 20 2026, due day 31 → clamped to 28. Today (20) <= 28 → not overdue
     const today = new Date(2026, 1, 20);
-    const bill = { dueDayOfMonth: 31, payScheduleId: 'sched-1' };
+    const bill = {
+      dueDayOfMonth: 31,
+      payScheduleId: 'sched-1',
+      createdAt: '2025-01-01T00:00:00.000Z',
+    };
     const schedule = { payDate: 25 };
     // today (20) <= clampedDueDay (28) and today (20) <= clampedPayDate (25) → UPCOMING
     expect(deriveBillState(bill, schedule, [], today)).toBe('UPCOMING');
@@ -278,7 +330,11 @@ describe('deriveBillState', () => {
   it('returns MISSED_SCHEDULE on Feb 28 for bill due day 31 (clamped pay date already passed)', () => {
     // Today: Feb 28 2026, due day 31 → clamped to 28. Pay date 1. Today (28) > 1, today (28) not > 28 → MISSED_SCHEDULE
     const today = new Date(2026, 1, 28);
-    const bill = { dueDayOfMonth: 31, payScheduleId: 'sched-1' };
+    const bill = {
+      dueDayOfMonth: 31,
+      payScheduleId: 'sched-1',
+      createdAt: '2025-01-01T00:00:00.000Z',
+    };
     const schedule = { payDate: 1 };
     expect(deriveBillState(bill, schedule, [], today)).toBe('MISSED_SCHEDULE');
   });
@@ -286,12 +342,30 @@ describe('deriveBillState', () => {
   it('returns PAID when Jan and Feb are paid and today is Feb 5', () => {
     // Due day 15, paid Jan 15 and Feb 15 → nearest unpaid = Mar 15 → future month → PAID
     const today = new Date(2026, 1, 5); // Feb 5 2026
-    const bill = { dueDayOfMonth: 15, payScheduleId: null };
+    const bill = {
+      dueDayOfMonth: 15,
+      payScheduleId: null,
+      createdAt: '2025-01-01T00:00:00.000Z',
+    };
     const instances = [
       makeInstance(BILL_ID, '2026-01-15'),
       makeInstance(BILL_ID, '2026-02-15'),
     ];
     expect(deriveBillState(bill, null, instances, today)).toBe('PAID');
+  });
+
+  it('returns PAID for a bill added mid-month with due day in the past (predates createdAt)', () => {
+    // Today: June 25 2026. Bill added today with dueDayOfMonth 11.
+    // June 11 predates bill — nearest unpaid is July 11 → future month → PAID.
+    // Before this fix, this case incorrectly returned OVERDUE because nearest-unpaid
+    // would walk to June 11 (this month's clamped due day) regardless of createdAt.
+    const today = new Date(2026, 5, 25);
+    const bill = {
+      dueDayOfMonth: 11,
+      payScheduleId: null,
+      createdAt: '2026-06-25T10:00:00.000Z',
+    };
+    expect(deriveBillState(bill, null, [], today)).toBe('PAID');
   });
 });
 

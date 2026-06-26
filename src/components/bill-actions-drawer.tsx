@@ -167,7 +167,10 @@ export function BillActionsDrawer() {
   const { actions = false } = useSearch({ from: '__root__' });
   const navigate = useNavigate();
   const [selectedBill, setSelectedBill] = React.useState<{
-    bill: Pick<Bill, 'id' | 'name' | 'dueDayOfMonth' | 'amountExpected'>;
+    bill: Pick<
+      Bill,
+      'id' | 'name' | 'dueDayOfMonth' | 'amountExpected' | 'createdAt'
+    >;
     instances: BillInstance[];
   } | null>(null);
 
@@ -178,7 +181,10 @@ export function BillActionsDrawer() {
   }
 
   function openPayDialog(
-    bill: Pick<Bill, 'id' | 'name' | 'dueDayOfMonth' | 'amountExpected'>,
+    bill: Pick<
+      Bill,
+      'id' | 'name' | 'dueDayOfMonth' | 'amountExpected' | 'createdAt'
+    >,
   ) {
     setSelectedBill({ bill, instances: instancesByBillId.get(bill.id) ?? [] });
   }
