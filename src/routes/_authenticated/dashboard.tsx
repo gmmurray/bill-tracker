@@ -8,6 +8,7 @@ import { Button } from '#/components/ui/button';
 import { Card, CardBody, CardHeader } from '#/components/ui/card';
 import {
   clampDayToMonth,
+  computeMonthDonutMetrics,
   deriveBillState,
   formatCurrency,
   formatDueLabel,
@@ -23,7 +24,6 @@ import {
   billsQueryOptions,
   currentMonthInstancesQueryOptions,
   useBills,
-  useCurrentMonthInstances,
 } from '#/features/bills/bills-queries';
 import {
   paySchedulesQueryOptions,
@@ -56,11 +56,9 @@ function DashboardPage() {
   const { today, instancesByBillId } = useBillActionsState();
   const billsQuery = useBills({ scheduleId: 'all', manualOnly: false });
   const schedulesQuery = usePaySchedules();
-  const instancesQuery = useCurrentMonthInstances();
 
   const bills = billsQuery.data ?? [];
   const schedules = schedulesQuery.data ?? [];
-  const allInstances = instancesQuery.data ?? [];
 
   const [selectedBill, setSelectedBill] = React.useState<SelectedBill | null>(
     null,
@@ -71,29 +69,11 @@ function DashboardPage() {
   const todayMonth = today.getMonth() + 1;
   const todayDay = today.getDate();
 
-  // Row 2 metrics — calendar-month-scoped.
-  // A bill is "relevant this month" if either (a) it has an instance this month,
-  // or (b) it's not skip-PAID (i.e., it still owes for some cycle on or before today).
-  // Skip-PAID bills — created mid-month with a past due day — never owed for this
-  // month at all, so they shouldn't count toward the donut totals.
-  const monthStart = `${todayYear}-${String(todayMonth).padStart(2, '0')}-`;
-  const monthInstances = allInstances.filter(i =>
-    i.dueDate.startsWith(monthStart),
-  );
-  const paidBillIds = new Set(monthInstances.map(i => i.billId));
-  const billsRelevantThisMonth = bills.filter(bill => {
-    if (paidBillIds.has(bill.id)) return true;
-    const schedule = schedules.find(s => s.id === bill.payScheduleId) ?? null;
-    const instances = instancesByBillId.get(bill.id) ?? [];
-    return deriveBillState(bill, schedule, instances, today) !== 'PAID';
-  });
-  const totalCount = billsRelevantThisMonth.length;
-  const totalCents = billsRelevantThisMonth.reduce(
-    (s, b) => s + b.amountExpected,
-    0,
-  );
-  const paidCount = paidBillIds.size;
-  const paidCents = monthInstances.reduce((s, i) => s + i.amountActual, 0);
+  // Row 2 metrics — calendar-month-scoped. See `computeMonthDonutMetrics` for
+  // the relevance rule (skip-PAID bills are excluded from both totals so newly
+  // added bills don't drag the donut backwards).
+  const { paidCount, totalCount, paidCents, totalCents } =
+    computeMonthDonutMetrics(bills, schedules, instancesByBillId, today);
 
   // Row 3 — active session
   const activeSchedule = selectActiveSchedule(

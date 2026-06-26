@@ -106,6 +106,76 @@ export function deriveBillState(
   return 'UPCOMING';
 }
 
+/**
+ * Predicate: does this bill currently owe for some cycle on or before today?
+ *
+ * "Owed" = state is anything but PAID. Used to distinguish bills that need
+ * user action this month from bills that don't (paid this month, paid ahead,
+ * skip-PAID, etc.). Thin wrapper around `deriveBillState` exposed for
+ * call-site clarity and direct testing.
+ */
+export function isOwedThisMonth(
+  bill: Pick<Bill, 'dueDayOfMonth' | 'payScheduleId' | 'createdAt'>,
+  schedule: Pick<PaySchedule, 'payDate'> | null,
+  instances: BillInstance[],
+  today: Date,
+): boolean {
+  return deriveBillState(bill, schedule, instances, today) !== 'PAID';
+}
+
+/**
+ * Computes the four Row-2 donut numbers (count and dollars, paid and total).
+ *
+ * Scope: calendar-month. A bill is included in `total*` iff either it has an
+ * instance whose `dueDate` falls in the current month, OR it's currently owed
+ * (state is not PAID). This filter excludes "skip-PAID" bills — bills added
+ * mid-month whose first owed cycle is in a future month — so newly-added bills
+ * don't drag the donut backwards.
+ *
+ * `paidCents` uses `amountActual` from current-month instances (real money paid).
+ * `paidCount` is unique bill IDs with a current-month instance.
+ */
+export function computeMonthDonutMetrics(
+  bills: Pick<
+    Bill,
+    'id' | 'dueDayOfMonth' | 'payScheduleId' | 'createdAt' | 'amountExpected'
+  >[],
+  schedules: Pick<PaySchedule, 'id' | 'payDate'>[],
+  instancesByBillId: Map<string, BillInstance[]>,
+  today: Date,
+): {
+  paidCount: number;
+  totalCount: number;
+  paidCents: number;
+  totalCents: number;
+} {
+  const monthPrefix = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-`;
+  const paidBillIds = new Set<string>();
+  let paidCents = 0;
+  for (const [billId, billInstances] of instancesByBillId) {
+    for (const instance of billInstances) {
+      if (instance.dueDate.startsWith(monthPrefix)) {
+        paidBillIds.add(billId);
+        paidCents += instance.amountActual;
+      }
+    }
+  }
+
+  const relevant = bills.filter(bill => {
+    if (paidBillIds.has(bill.id)) return true;
+    const schedule = schedules.find(s => s.id === bill.payScheduleId) ?? null;
+    const instances = instancesByBillId.get(bill.id) ?? [];
+    return isOwedThisMonth(bill, schedule, instances, today);
+  });
+
+  return {
+    paidCount: paidBillIds.size,
+    totalCount: relevant.length,
+    paidCents,
+    totalCents: relevant.reduce((s, b) => s + b.amountExpected, 0),
+  };
+}
+
 export function mostRecentPastSession(payDate: number, today: Date): Date {
   const year = today.getFullYear();
   const month = today.getMonth() + 1;

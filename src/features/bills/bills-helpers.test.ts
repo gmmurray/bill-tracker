@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   clampDayToMonth,
+  computeMonthDonutMetrics,
   computeNearestUnpaidDueDate,
   deriveBillState,
   formatCurrency,
   formatDueLabel,
   formatOrdinal,
+  isOwedThisMonth,
   isScheduleSessionComplete,
   mostRecentPastSession,
   msUntilNextMidnight,
@@ -33,8 +35,13 @@ function makeBill(
   id: string,
   dueDayOfMonth: number,
   payScheduleId: string | null = null,
-): Pick<Bill, 'id' | 'dueDayOfMonth' | 'payScheduleId'> {
-  return { id, dueDayOfMonth, payScheduleId };
+  createdAt = '2025-01-01T00:00:00.000Z',
+  amountExpected = 10000,
+): Pick<
+  Bill,
+  'id' | 'dueDayOfMonth' | 'payScheduleId' | 'createdAt' | 'amountExpected'
+> {
+  return { id, dueDayOfMonth, payScheduleId, createdAt, amountExpected };
 }
 
 function makeSchedule(
@@ -366,6 +373,224 @@ describe('deriveBillState', () => {
       createdAt: '2026-06-25T10:00:00.000Z',
     };
     expect(deriveBillState(bill, null, [], today)).toBe('PAID');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isOwedThisMonth
+// ---------------------------------------------------------------------------
+
+describe('isOwedThisMonth', () => {
+  const BILL_ID = 'bill-owed';
+
+  it('returns false for a bill paid this month', () => {
+    // Bill due 15, paid for June 15 cycle, today June 20
+    const today = new Date(2026, 5, 20);
+    const bill = {
+      dueDayOfMonth: 15,
+      payScheduleId: null,
+      createdAt: '2025-01-01T00:00:00.000Z',
+    };
+    const instances = [makeInstance(BILL_ID, '2026-06-15')];
+    expect(isOwedThisMonth(bill, null, instances, today)).toBe(false);
+  });
+
+  it('returns true for an OVERDUE bill', () => {
+    // Bill due 5, unpaid, today June 10 → OVERDUE
+    const today = new Date(2026, 5, 10);
+    const bill = {
+      dueDayOfMonth: 5,
+      payScheduleId: null,
+      createdAt: '2025-01-01T00:00:00.000Z',
+    };
+    expect(isOwedThisMonth(bill, null, [], today)).toBe(true);
+  });
+
+  it('returns true for an UPCOMING bill (still owes this month)', () => {
+    // Bill due 20, unpaid, today June 10 → UPCOMING (not yet hit due day, but owes for June)
+    const today = new Date(2026, 5, 10);
+    const bill = {
+      dueDayOfMonth: 20,
+      payScheduleId: null,
+      createdAt: '2025-01-01T00:00:00.000Z',
+    };
+    expect(isOwedThisMonth(bill, null, [], today)).toBe(true);
+  });
+
+  it('returns true for a MISSED_SCHEDULE bill', () => {
+    // Bill due 20, pay date 5, today June 10, unpaid → MISSED_SCHEDULE
+    const today = new Date(2026, 5, 10);
+    const bill = {
+      dueDayOfMonth: 20,
+      payScheduleId: 'sched-1',
+      createdAt: '2025-01-01T00:00:00.000Z',
+    };
+    const schedule = { payDate: 5 };
+    expect(isOwedThisMonth(bill, schedule, [], today)).toBe(true);
+  });
+
+  it('returns false for a skip-PAID bill (created mid-month, due day in past)', () => {
+    // Bill created June 25, due 11. June 11 predates bill → state PAID via skip
+    const today = new Date(2026, 5, 25);
+    const bill = {
+      dueDayOfMonth: 11,
+      payScheduleId: null,
+      createdAt: '2026-06-25T10:00:00.000Z',
+    };
+    expect(isOwedThisMonth(bill, null, [], today)).toBe(false);
+  });
+
+  it('returns false for a paid-ahead bill (instance covers a future cycle)', () => {
+    // Bill due 15, paid for July 15 already (paid ahead), today June 25 — no June instance
+    // computeNearestUnpaidDueDate starts at June, June 15 has no instance, returns June 15
+    // → state would be OVERDUE since today (25) > 15. So this is owed.
+    // Real "paid-ahead" means current month's cycle is covered. Set: paid for June 15.
+    // (A truly paid-ahead bill that skips current month is unusual — see helper docs.)
+    const today = new Date(2026, 5, 25);
+    const bill = {
+      dueDayOfMonth: 15,
+      payScheduleId: null,
+      createdAt: '2025-01-01T00:00:00.000Z',
+    };
+    const instances = [makeInstance(BILL_ID, '2026-06-15')];
+    expect(isOwedThisMonth(bill, null, instances, today)).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// computeMonthDonutMetrics
+// ---------------------------------------------------------------------------
+
+describe('computeMonthDonutMetrics', () => {
+  function makeSched(id: string, payDate: number): PaySchedule {
+    return makeSchedule(id, payDate);
+  }
+
+  it('returns zeros for an empty bills list', () => {
+    const today = new Date(2026, 5, 25);
+    const result = computeMonthDonutMetrics([], [], new Map(), today);
+    expect(result).toEqual({
+      paidCount: 0,
+      totalCount: 0,
+      paidCents: 0,
+      totalCents: 0,
+    });
+  });
+
+  it('counts a single paid-this-month bill in both numerator and denominator', () => {
+    // Bill due 15, paid June 15 for $100 expected / $98 actual
+    const today = new Date(2026, 5, 25);
+    const bill = makeBill('b1', 15, null, '2025-01-01T00:00:00.000Z', 10000);
+    const instances = [
+      { ...makeInstance('b1', '2026-06-15'), amountActual: 9800 },
+    ];
+    const map = makeInstMap([['b1', instances]]);
+    const result = computeMonthDonutMetrics([bill], [], map, today);
+    expect(result).toEqual({
+      paidCount: 1,
+      totalCount: 1,
+      paidCents: 9800,
+      totalCents: 10000,
+    });
+  });
+
+  it('counts an unpaid (OVERDUE) bill in denominator only', () => {
+    // Bill due 5, unpaid, today June 25 → OVERDUE → owed → in total but not paid
+    const today = new Date(2026, 5, 25);
+    const bill = makeBill('b1', 5, null, '2025-01-01T00:00:00.000Z', 10000);
+    const result = computeMonthDonutMetrics([bill], [], new Map(), today);
+    expect(result).toEqual({
+      paidCount: 0,
+      totalCount: 1,
+      paidCents: 0,
+      totalCents: 10000,
+    });
+  });
+
+  it('excludes skip-PAID bills from both numerator and denominator', () => {
+    // Bill created June 25, due 11. Skip-PAID — not relevant this month.
+    const today = new Date(2026, 5, 25);
+    const bill = makeBill('b1', 11, null, '2026-06-25T10:00:00.000Z', 10000);
+    const result = computeMonthDonutMetrics([bill], [], new Map(), today);
+    expect(result).toEqual({
+      paidCount: 0,
+      totalCount: 0,
+      paidCents: 0,
+      totalCents: 0,
+    });
+  });
+
+  it('mixes paid + unpaid + skip-PAID correctly (the user-reported scenario)', () => {
+    // Today June 25. Three bills:
+    //  - b1: paid this month (state PAID via instance) → in total + in paid
+    //  - b2: unpaid OVERDUE (created long ago, due 5, no instance) → in total, not paid
+    //  - b3: skip-PAID (created today, due 11) → excluded from both
+    const today = new Date(2026, 5, 25);
+    const b1 = makeBill('b1', 15, null, '2025-01-01T00:00:00.000Z', 10000);
+    const b2 = makeBill('b2', 5, null, '2025-01-01T00:00:00.000Z', 20000);
+    const b3 = makeBill('b3', 11, null, '2026-06-25T10:00:00.000Z', 30000);
+    const instances = [
+      { ...makeInstance('b1', '2026-06-15'), amountActual: 10000 },
+    ];
+    const map = makeInstMap([['b1', instances]]);
+    const result = computeMonthDonutMetrics([b1, b2, b3], [], map, today);
+    expect(result).toEqual({
+      paidCount: 1,
+      totalCount: 2,
+      paidCents: 10000,
+      totalCents: 30000,
+    });
+  });
+
+  it('uses amountActual (not amountExpected) for paidCents', () => {
+    // Bill expected $100, actually paid $87
+    const today = new Date(2026, 5, 25);
+    const bill = makeBill('b1', 15, null, '2025-01-01T00:00:00.000Z', 10000);
+    const instances = [
+      { ...makeInstance('b1', '2026-06-15'), amountActual: 8700 },
+    ];
+    const map = makeInstMap([['b1', instances]]);
+    const result = computeMonthDonutMetrics([bill], [], map, today);
+    expect(result.paidCents).toBe(8700);
+    expect(result.totalCents).toBe(10000);
+  });
+
+  it('respects schedule for MISSED_SCHEDULE state derivation', () => {
+    // Bill on a schedule, today past pay date but before due day, unpaid → MISSED_SCHEDULE → owed
+    const today = new Date(2026, 5, 10);
+    const bill = makeBill('b1', 20, 's1', '2025-01-01T00:00:00.000Z', 10000);
+    const schedule = makeSched('s1', 5);
+    const result = computeMonthDonutMetrics(
+      [bill],
+      [schedule],
+      new Map(),
+      today,
+    );
+    expect(result).toEqual({
+      paidCount: 0,
+      totalCount: 1,
+      paidCents: 0,
+      totalCents: 10000,
+    });
+  });
+
+  it('ignores instances whose dueDate is in a different month for paidCents', () => {
+    // Bill paid for May 15 (last month), no June instance, today June 25
+    // The May payment shouldn't count toward June's donut paidCents.
+    // The bill itself is OVERDUE for June (no June instance, today > June 15) → in total.
+    const today = new Date(2026, 5, 25);
+    const bill = makeBill('b1', 15, null, '2025-01-01T00:00:00.000Z', 10000);
+    const instances = [
+      { ...makeInstance('b1', '2026-05-15'), amountActual: 9000 },
+    ];
+    const map = makeInstMap([['b1', instances]]);
+    const result = computeMonthDonutMetrics([bill], [], map, today);
+    expect(result).toEqual({
+      paidCount: 0,
+      totalCount: 1,
+      paidCents: 0,
+      totalCents: 10000,
+    });
   });
 });
 
