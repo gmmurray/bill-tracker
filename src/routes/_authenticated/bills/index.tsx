@@ -396,6 +396,7 @@ type QuickAddFormValues = {
   name: string;
   amountDollars: string;
   dueDayOfMonth: string;
+  addAnother: boolean;
 };
 
 function QuickAddDrawer({
@@ -413,11 +414,14 @@ function QuickAddDrawer({
     register,
     handleSubmit,
     reset,
+    setFocus,
     formState: { errors, isSubmitting },
-  } = useForm<QuickAddFormValues>();
+  } = useForm<QuickAddFormValues>({
+    defaultValues: { addAnother: false },
+  });
 
   React.useEffect(() => {
-    if (!open) reset();
+    if (!open) reset({ addAnother: false });
   }, [open, reset]);
 
   async function onSubmit(values: QuickAddFormValues) {
@@ -428,6 +432,16 @@ function QuickAddDrawer({
       dueDayOfMonth: parseInt(values.dueDayOfMonth, 10),
       isAutoPay: false,
     });
+    if (values.addAnother) {
+      reset({
+        name: '',
+        amountDollars: '',
+        dueDayOfMonth: '',
+        addAnother: true,
+      });
+      setFocus('name');
+      return;
+    }
     onSuccess(bill.id);
   }
 
@@ -527,20 +541,30 @@ function QuickAddDrawer({
           </div>
         </form>
 
-        <ResponsiveDrawerFooter>
-          <ResponsiveDrawerClose asChild>
-            <Button variant="default">Cancel</Button>
-          </ResponsiveDrawerClose>
-          <Button
-            variant="primary"
-            type="submit"
-            form="quick-add-form"
-            disabled={isSubmitting || createBillMutation.isPending}
-          >
-            {isSubmitting || createBillMutation.isPending
-              ? 'Saving...'
-              : 'Add Bill'}
-          </Button>
+        <ResponsiveDrawerFooter className="justify-between">
+          <label className="flex items-center gap-2 text-sm text-chill-text cursor-pointer select-none">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-chill-border accent-chill-purple"
+              {...register('addAnother')}
+            />
+            Add another
+          </label>
+          <div className="flex items-center gap-2">
+            <ResponsiveDrawerClose asChild>
+              <Button variant="default">Cancel</Button>
+            </ResponsiveDrawerClose>
+            <Button
+              variant="primary"
+              type="submit"
+              form="quick-add-form"
+              disabled={isSubmitting || createBillMutation.isPending}
+            >
+              {isSubmitting || createBillMutation.isPending
+                ? 'Saving...'
+                : 'Add Bill'}
+            </Button>
+          </div>
         </ResponsiveDrawerFooter>
       </ResponsiveDrawerContent>
     </ResponsiveDrawer>

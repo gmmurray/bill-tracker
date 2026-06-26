@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import * as React from 'react';
+import { FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import { useBillActionsState } from '#/components/bill-actions-drawer';
 import { PayBillDialog } from '#/components/pay-bill-dialog';
 import { Badge } from '#/components/ui/badge';
@@ -61,6 +62,7 @@ function DashboardPage() {
   const [selectedBill, setSelectedBill] = React.useState<SelectedBill | null>(
     null,
   );
+  const [isSessionCollapsed, setIsSessionCollapsed] = React.useState(false);
 
   const todayYear = today.getFullYear();
   const todayMonth = today.getMonth() + 1;
@@ -209,24 +211,46 @@ function DashboardPage() {
         </Card>
       ) : (
         <Card>
-          <CardHeader>
+          <CardHeader className={isSessionCollapsed ? 'border-b-0' : ''}>
             <span className="text-sm font-semibold text-chill-text">
               Pay Session — {activeSchedule.name} (
               {formatOrdinal(activeSchedule.payDate)})
             </span>
+            <button
+              type="button"
+              onClick={() => setIsSessionCollapsed(c => !c)}
+              aria-label={
+                isSessionCollapsed ? 'Expand session' : 'Collapse session'
+              }
+              aria-expanded={!isSessionCollapsed}
+              className="rounded p-1 text-chill-text-muted hover:bg-chill-purple-light hover:text-chill-text transition-colors"
+            >
+              {isSessionCollapsed ? (
+                <FiChevronDown size={18} aria-hidden="true" />
+              ) : (
+                <FiChevronUp size={18} aria-hidden="true" />
+              )}
+            </button>
           </CardHeader>
-          <ul>
-            {activeScheduleEntries.map(({ bill, state, isPaid }) => (
-              <BillRow
-                key={bill.id}
-                bill={bill}
-                state={state}
-                isPaid={isPaid}
-                showStateBackground
-                onPay={() => openPayDialog(bill)}
-              />
-            ))}
-          </ul>
+          <div
+            className={cn(
+              'grid transition-[grid-template-rows] duration-300 ease-out',
+              isSessionCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]',
+            )}
+          >
+            <ul className="overflow-hidden">
+              {activeScheduleEntries.map(({ bill, state, isPaid }) => (
+                <BillRow
+                  key={bill.id}
+                  bill={bill}
+                  state={state}
+                  isPaid={isPaid}
+                  showStateBackground
+                  onPay={() => openPayDialog(bill)}
+                />
+              ))}
+            </ul>
+          </div>
         </Card>
       )}
 
