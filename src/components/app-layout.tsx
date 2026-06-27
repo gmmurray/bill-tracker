@@ -43,11 +43,16 @@ export default function AppLayout({ children }: PropsWithChildren) {
           >
             <FiMenu size={20} aria-hidden="true" />
           </button>
-          <span className="lg:hidden flex-1 font-semibold text-xl tracking-tight text-center">
+          <Link
+            to="/dashboard"
+            className="lg:hidden font-semibold text-xl tracking-tight text-center"
+          >
             Bill<span className="text-chill-ice">Chill.</span>
-          </span>
+          </Link>
           <div className="hidden lg:block flex-1" />
-          <BillActionsNavButton />
+          <div className="ml-auto">
+            <BillActionsNavButton />
+          </div>
         </header>
 
         <AttentionBanner />
@@ -61,9 +66,13 @@ function SidebarContents({ onLinkClick }: { onLinkClick?: () => void }) {
   return (
     <div className="flex flex-col h-full">
       <div className="px-3 mb-8">
-        <span className="font-semibold text-xl tracking-tight">
+        <Link
+          onClick={onLinkClick}
+          to="/dashboard"
+          className="font-semibold text-xl tracking-tight"
+        >
           Bill<span className="text-chill-ice">Chill.</span>
-        </span>
+        </Link>
       </div>
 
       <nav className="flex-1 flex flex-col gap-1">
