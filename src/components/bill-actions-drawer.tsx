@@ -214,8 +214,19 @@ export function BillActionsDrawer() {
 
           <div className="flex-1 overflow-auto flex flex-col">
             {attention.length === 0 && upcoming.length === 0 ? (
-              <div className="flex-1 flex items-center justify-center py-16 text-sm text-chill-text-muted">
-                You&apos;re all caught up.
+              <div className="flex-1 flex flex-col items-center justify-center gap-4 py-16 px-6 text-center">
+                <img
+                  src="/logo.png"
+                  alt=""
+                  className="h-20 w-20"
+                  aria-hidden="true"
+                />
+                <p className="text-lg font-semibold text-chill-text">
+                  You&apos;re chilling.
+                </p>
+                <p className="text-sm text-chill-text-muted">
+                  Nothing needs your attention right now.
+                </p>
               </div>
             ) : (
               <>

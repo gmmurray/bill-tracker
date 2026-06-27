@@ -1,13 +1,12 @@
 import { useNavigate } from '@tanstack/react-router';
-import { FiCheckCircle } from 'react-icons/fi';
+import { LuSnowflake } from 'react-icons/lu';
 import { useBillActionsState } from '#/components/bill-actions-drawer';
-import { cn } from '#/lib/utils';
 
 export function BillActionsNavButton() {
   const navigate = useNavigate();
   const { attentionCount } = useBillActionsState();
 
-  const active = attentionCount > 0;
+  const hasAttention = attentionCount > 0;
 
   function open() {
     navigate({ search: prev => ({ ...prev, actions: true }), to: '.' });
@@ -17,15 +16,20 @@ export function BillActionsNavButton() {
     <button
       type="button"
       onClick={open}
-      aria-label="Bill actions"
-      className={cn(
-        'p-1.5 rounded-md transition-colors',
-        active
-          ? 'bg-chill-peach text-chill-text hover:bg-chill-peach-border hover:cursor-pointer'
-          : 'text-chill-text-muted hover:bg-chill-purple-light hover:text-chill-text',
-      )}
+      aria-label={
+        hasAttention
+          ? `Bill actions, ${attentionCount} needing attention`
+          : 'Bill actions'
+      }
+      className="relative p-1 rounded-md text-chill-ice transition-colors hover:bg-chill-purple-light hover:cursor-pointer"
     >
-      <FiCheckCircle size={20} />
+      <LuSnowflake size={24} aria-hidden="true" />
+      {hasAttention && (
+        <span
+          aria-hidden="true"
+          className="absolute top-0.5 right-0.5 h-2 w-2 rounded-full bg-chill-peach-border ring-2 ring-chill-surface"
+        />
+      )}
     </button>
   );
 }

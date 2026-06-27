@@ -14,12 +14,7 @@ function Home() {
     <div className="bg-chill-bg text-chill-text min-h-screen flex flex-col px-12 lg:px-24 xl:px-40">
       <nav className="flex items-center py-8">
         <span className="flex items-center gap-2 font-semibold text-xl tracking-tight">
-          <img
-            src="/logo.png"
-            alt=""
-            className="h-8 w-8"
-            aria-hidden="true"
-          />
+          <img src="/logo.png" alt="" className="h-8 w-8" aria-hidden="true" />
           <div>
             Bill<span className="text-chill-ice">Chill.</span>
           </div>
