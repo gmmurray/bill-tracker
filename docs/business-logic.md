@@ -32,13 +32,33 @@ When the user marks a bill as paid, the system computes which cycle the payment 
 
 **The look-ahead is unbounded.** If Jan, Feb, and March are already paid and the user pays again, the system stamps April. This is what enables the pay-ahead workflow.
 
-**The walk does not look backward.** If the user adds a bill mid-month and skips paying it for the past two months, those past cycles are never "rediscovered" by the nearest-unpaid logic. Recording payments for past cycles is done explicitly via the **Log Historical Payment** flow on the bill detail page, which sets `dueDate` directly without invoking nearest-unpaid.
+**The walk does not look backward.** If the user adds a bill mid-month and skips paying it for the past two months, those past cycles are never "rediscovered" by the nearest-unpaid logic. Recording payments for past cycles is done explicitly via the **Log Historical Payment** flow on the bill detail page, which sets `dueDate` directly without invoking nearest-unpaid. See [Historical Payment Cycle Selection](#historical-payment-cycle-selection) for how that flow constrains `dueDate`.
 
 **The walk also skips cycles that predate `bill.createdAt`.** A bill added on June 25 with `dueDayOfMonth = 11` won't surface June 11 as overdue — the bill didn't exist for that cycle, so it isn't owed for it. The walk advances to July 11 (the first cycle on or after creation), which makes the bill derive to `UPCOMING` / `PAID` depending on calendar position. Without this guard, mid-month additions with a past-day due-day flash as `OVERDUE` from the moment they're created.
 
 **Implementation:** `computeNearestUnpaidDueDate(dueDayOfMonth, instances, today, createdAt?)` in [src/features/bills/bills-helpers.ts](src/features/bills/bills-helpers.ts). `createdAt` is optional only for legacy call sites; production callers (state derivation, payment recording, Pay dialog) always pass it.
 
 **UI contract:** any UI that triggers a payment must display which `dueDate` the payment is being applied to *before* the user confirms. The Pay confirmation dialog (dashboard, action panel) shows `"Applying to: {formattedDueDate}"`. Skipping this contract risks the user paying for a cycle they didn't intend.
+
+---
+
+## Historical Payment Cycle Selection
+
+The **Log Historical Payment** flow constrains `dueDate` so that every written instance corresponds to a canonical cycle the derivation walk can see. Free-form dates are not accepted: every `dueDate` written by this flow equals `clampDayToMonth(dueDayOfMonth, y, m)` for some `(y, m)`.
+
+The drawer operates in one of two modes:
+
+1. **Catch-up mode** — if any cycle between `createdAt` and today's month is unpaid, the UI offers those cycles in a dropdown (oldest first, oldest pre-selected). Computed by `computeEligibleHistoricalCycles(dueDayOfMonth, instances, today, createdAt)`. Future cycles are never offered — those go through Mark Paid, which uses nearest-unpaid.
+
+2. **Extend-history mode** — if every cycle from `createdAt` forward is already paid, the UI shows a single cycle one calendar month before the oldest instance's `dueDate`, clamped via the date-math rule. Confirming logs it; reopening offers the cycle before *that*. This is a record-keeping path for users who want a complete ledger predating when they added the bill, not a "fix a missed cycle" path. Computed by `computeExtendedHistoricalCycle(dueDayOfMonth, instances)`.
+
+Catch-up takes precedence: while any unpaid in-range cycle exists, extend mode is unavailable. This avoids sparse ledgers where a user skips a known gap to log even older history.
+
+If the bill has no instances and no eligible in-range cycles (only possible for a bill created in the future, which the UI doesn't allow), the drawer disables submission.
+
+**Why constrain it:** free-form `dueDate` entry let users save instances whose `dueDate` didn't match any cycle the derivation walk asks about. Those instances are invisible to state derivation — the bill stays `MISSED_SCHEDULE` / `OVERDUE` forever despite the recorded payment, and they show up as orphaned rows in the ledger UI.
+
+**Implementations:** `computeEligibleHistoricalCycles` and `computeExtendedHistoricalCycle` in [src/features/bills/bills-helpers.ts](src/features/bills/bills-helpers.ts). Tests in [src/features/bills/bills-helpers.test.ts](src/features/bills/bills-helpers.test.ts).
 
 ---
 

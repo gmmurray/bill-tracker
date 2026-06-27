@@ -15,6 +15,7 @@ export type BillWithSchedule = Bill & {
 export type BillDetail = BillWithSchedule & {
   instances: BillInstance[];
   instancesTotal: number;
+  allInstanceDueDates: string[];
 };
 
 export type BillListFilters = {
@@ -54,9 +55,7 @@ export type BillState = 'PAID' | 'OVERDUE' | 'MISSED_SCHEDULE' | 'UPCOMING';
 
 export const logHistoricalPaymentSchema = z.object({
   billId: z.string().uuid(),
-  dueDate: z.iso.date().refine(val => new Date(val) <= new Date(), {
-    message: 'dueDate must be on or before today',
-  }),
+  dueDate: z.iso.date(),
   amountActual: z.number().int().positive(),
   paidAt: z.iso.datetime(),
 });

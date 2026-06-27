@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   clampDayToMonth,
+  computeEligibleHistoricalCycles,
+  computeExtendedHistoricalCycle,
   computeMonthDonutMetrics,
   computeNearestUnpaidDueDate,
   deriveBillState,
@@ -874,5 +876,91 @@ describe('msUntilNextMidnight', () => {
     for (const t of times) {
       expect(msUntilNextMidnight(t)).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('computeEligibleHistoricalCycles', () => {
+  it('returns the current cycle when bill was created this month and nothing is paid', () => {
+    const createdAt = new Date(2026, 5, 27);
+    const today = new Date(2026, 5, 27);
+    expect(computeEligibleHistoricalCycles(29, [], today, createdAt)).toEqual([
+      '2026-06-29',
+    ]);
+  });
+
+  it('excludes cycles whose normalized dueDate predates createdAt', () => {
+    const createdAt = new Date(2026, 5, 27);
+    const today = new Date(2026, 5, 28);
+    expect(computeEligibleHistoricalCycles(15, [], today, createdAt)).toEqual(
+      [],
+    );
+  });
+
+  it('returns only unpaid cycles, oldest first, across multiple months', () => {
+    const createdAt = new Date(2026, 1, 1);
+    const today = new Date(2026, 5, 15);
+    const instances = [
+      makeInstance('b1', '2026-03-15'),
+      makeInstance('b1', '2026-05-15'),
+    ];
+    expect(
+      computeEligibleHistoricalCycles(15, instances, today, createdAt),
+    ).toEqual(['2026-02-15', '2026-04-15', '2026-06-15']);
+  });
+
+  it('returns empty array when every cycle in range is already paid', () => {
+    const createdAt = new Date(2026, 3, 1);
+    const today = new Date(2026, 5, 15);
+    const instances = [
+      makeInstance('b1', '2026-04-10'),
+      makeInstance('b1', '2026-05-10'),
+      makeInstance('b1', '2026-06-10'),
+    ];
+    expect(
+      computeEligibleHistoricalCycles(10, instances, today, createdAt),
+    ).toEqual([]);
+  });
+
+  it('clamps day-of-month for short months (Feb 31 → Feb 28)', () => {
+    const createdAt = new Date(2026, 0, 1);
+    const today = new Date(2026, 2, 15);
+    expect(computeEligibleHistoricalCycles(31, [], today, createdAt)).toEqual([
+      '2026-01-31',
+      '2026-02-28',
+      '2026-03-31',
+    ]);
+  });
+});
+
+describe('computeExtendedHistoricalCycle', () => {
+  it('returns null when there are no instances', () => {
+    expect(computeExtendedHistoricalCycle(15, [])).toBeNull();
+  });
+
+  it('returns the cycle one month before the oldest instance, clamped', () => {
+    const instances = [
+      makeInstance('b1', '2026-06-29'),
+      makeInstance('b1', '2026-07-29'),
+    ];
+    expect(computeExtendedHistoricalCycle(29, instances)).toBe('2026-05-29');
+  });
+
+  it('clamps when the previous month is shorter than dueDayOfMonth', () => {
+    const instances = [makeInstance('b1', '2026-03-31')];
+    expect(computeExtendedHistoricalCycle(31, instances)).toBe('2026-02-28');
+  });
+
+  it('rolls over the year boundary', () => {
+    const instances = [makeInstance('b1', '2026-01-15')];
+    expect(computeExtendedHistoricalCycle(15, instances)).toBe('2025-12-15');
+  });
+
+  it('uses the earliest instance even when passed out of order', () => {
+    const instances = [
+      makeInstance('b1', '2026-08-10'),
+      makeInstance('b1', '2026-05-10'),
+      makeInstance('b1', '2026-07-10'),
+    ];
+    expect(computeExtendedHistoricalCycle(10, instances)).toBe('2026-04-10');
   });
 });

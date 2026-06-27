@@ -40,7 +40,11 @@ import {
   BILL_CATEGORIES,
   BILL_CATEGORY_LABELS,
 } from '#/features/bills/bills-constants';
-import { formatCurrency } from '#/features/bills/bills-helpers';
+import {
+  computeEligibleHistoricalCycles,
+  computeExtendedHistoricalCycle,
+  formatCurrency,
+} from '#/features/bills/bills-helpers';
 import type { BillDetail, BillInstance } from '#/features/bills/bills-model';
 import {
   billDetailQueryOptions,
@@ -158,6 +162,9 @@ function BillDetailPage() {
       <LogHistoricalPaymentDrawer
         billId={billId}
         amountExpected={bill.amountExpected}
+        dueDayOfMonth={bill.dueDayOfMonth}
+        createdAt={bill.createdAt}
+        allInstanceDueDates={bill.allInstanceDueDates}
         open={logDrawerOpen}
         onOpenChange={setLogDrawerOpen}
       />
@@ -855,21 +862,55 @@ type LogPaymentFormValues = {
   paidAt: string;
 };
 
+function formatCycleLabel(dueDate: string): string {
+  const [year, month, day] = dueDate.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  const monthName = date.toLocaleDateString('en-US', { month: 'long' });
+  const shortMonth = date.toLocaleDateString('en-US', { month: 'short' });
+  return `${monthName} ${year} (due ${shortMonth} ${day})`;
+}
+
 function LogHistoricalPaymentDrawer({
   billId,
   amountExpected,
+  dueDayOfMonth,
+  createdAt,
+  allInstanceDueDates,
   open,
   onOpenChange,
 }: {
   billId: string;
   amountExpected: number;
+  dueDayOfMonth: number;
+  createdAt: string;
+  allInstanceDueDates: string[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
   const logMutation = useLogHistoricalPayment();
-  const todayISO = new Date().toISOString().split('T')[0];
+
+  const { eligibleCycles, extendedCycle } = React.useMemo(() => {
+    const instances = allInstanceDueDates.map(dueDate => ({
+      dueDate,
+    })) as BillInstance[];
+    const eligible = computeEligibleHistoricalCycles(
+      dueDayOfMonth,
+      instances,
+      new Date(),
+      new Date(createdAt),
+    );
+    const extended =
+      eligible.length === 0
+        ? computeExtendedHistoricalCycle(dueDayOfMonth, instances)
+        : null;
+    return { eligibleCycles: eligible, extendedCycle: extended };
+  }, [allInstanceDueDates, dueDayOfMonth, createdAt]);
+
+  const mode: 'catch-up' | 'extend' | 'empty' =
+    eligibleCycles.length > 0 ? 'catch-up' : extendedCycle ? 'extend' : 'empty';
 
   const {
+    control,
     register,
     handleSubmit,
     reset,
@@ -878,20 +919,25 @@ function LogHistoricalPaymentDrawer({
   } = useForm<LogPaymentFormValues>();
 
   React.useEffect(() => {
-    if (open) {
-      const now = new Date();
-      const localPadded = new Date(
-        now.getTime() - now.getTimezoneOffset() * 60000,
-      )
-        .toISOString()
-        .slice(0, 16);
-      reset({
-        dueDate: '',
-        amountDollars: (amountExpected / 100).toFixed(2),
-        paidAt: localPadded,
-      });
-    }
-  }, [open, reset, amountExpected]);
+    if (!open) return;
+    const now = new Date();
+    const localPadded = new Date(
+      now.getTime() - now.getTimezoneOffset() * 60000,
+    )
+      .toISOString()
+      .slice(0, 16);
+    const defaultDueDate =
+      mode === 'catch-up'
+        ? eligibleCycles[0]!
+        : mode === 'extend'
+          ? extendedCycle!
+          : '';
+    reset({
+      dueDate: defaultDueDate,
+      amountDollars: (amountExpected / 100).toFixed(2),
+      paidAt: localPadded,
+    });
+  }, [open, reset, amountExpected, eligibleCycles, extendedCycle, mode]);
 
   async function onSubmit(values: LogPaymentFormValues) {
     try {
@@ -918,7 +964,11 @@ function LogHistoricalPaymentDrawer({
               Log Historical Payment
             </ResponsiveDrawerTitle>
             <ResponsiveDrawerDescription>
-              Back-fill a payment record for a past cycle.
+              {mode === 'catch-up'
+                ? 'Record a payment for a cycle this bill missed.'
+                : mode === 'extend'
+                  ? "Extend this bill's history one cycle further back."
+                  : 'No cycles available to log against.'}
             </ResponsiveDrawerDescription>
           </div>
           <ResponsiveDrawerClose
@@ -939,15 +989,43 @@ function LogHistoricalPaymentDrawer({
           className="flex-1 overflow-auto px-6 py-5 flex flex-col gap-4"
         >
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="log-due-date">Cycle due date</Label>
-            <Input
-              id="log-due-date"
-              type="date"
-              max={todayISO}
-              {...register('dueDate', {
-                required: 'Cycle due date is required',
-              })}
-            />
+            <Label htmlFor="log-cycle">Cycle</Label>
+            {mode === 'catch-up' ? (
+              <Controller
+                control={control}
+                name="dueDate"
+                rules={{ required: 'Cycle is required' }}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="log-cycle">
+                      <SelectValue placeholder="Select a cycle" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {eligibleCycles.map(dueDate => (
+                        <SelectItem key={dueDate} value={dueDate}>
+                          {formatCycleLabel(dueDate)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            ) : mode === 'extend' ? (
+              <>
+                <input type="hidden" {...register('dueDate')} />
+                <p className="text-sm text-chill-text rounded-md border border-chill-border bg-chill-surface px-3 py-2">
+                  {formatCycleLabel(extendedCycle!)}
+                </p>
+                <p className="text-xs text-chill-text-muted">
+                  All known cycles are paid. Confirm to extend the ledger one
+                  cycle further back.
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-chill-text-muted">
+                This bill has no payable cycles yet.
+              </p>
+            )}
             {errors.dueDate && (
               <p className="text-xs text-red-500">{errors.dueDate.message}</p>
             )}
@@ -1010,7 +1088,7 @@ function LogHistoricalPaymentDrawer({
             variant="primary"
             type="submit"
             form="log-payment-form"
-            disabled={isSubmitting || logMutation.isPending}
+            disabled={isSubmitting || logMutation.isPending || mode === 'empty'}
           >
             {isSubmitting || logMutation.isPending
               ? 'Saving...'

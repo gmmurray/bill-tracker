@@ -122,15 +122,20 @@ export const getBillDetail = createServerFn({ method: 'GET' })
 
     const page = data.page ?? 1;
     const pageSize = data.pageSize ?? 20;
-    const [{ instances, total }, scheduleRows] = await Promise.all([
-      getBillInstancesByBillId(db, data.billId, page, pageSize),
-      bill.payScheduleId
-        ? db
-            .select()
-            .from(paySchedules)
-            .where(eq(paySchedules.id, bill.payScheduleId))
-        : Promise.resolve([]),
-    ]);
+    const [{ instances, total }, scheduleRows, allDueDateRows] =
+      await Promise.all([
+        getBillInstancesByBillId(db, data.billId, page, pageSize),
+        bill.payScheduleId
+          ? db
+              .select()
+              .from(paySchedules)
+              .where(eq(paySchedules.id, bill.payScheduleId))
+          : Promise.resolve([]),
+        db
+          .select({ dueDate: billInstances.dueDate })
+          .from(billInstances)
+          .where(eq(billInstances.billId, data.billId)),
+      ]);
 
     const schedule = scheduleRows[0] ?? null;
 
@@ -142,6 +147,7 @@ export const getBillDetail = createServerFn({ method: 'GET' })
       isOrphaned: bill.payScheduleId !== null && schedule?.isActive === false,
       instances,
       instancesTotal: total,
+      allInstanceDueDates: allDueDateRows.map(r => r.dueDate),
     };
   });
 

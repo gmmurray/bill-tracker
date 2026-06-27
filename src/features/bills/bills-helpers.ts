@@ -40,14 +40,18 @@ export function computeNearestUnpaidDueDate(
 ): string {
   const paidDates = new Set(existingInstances.map(i => i.dueDate));
   const createdAtDateStr = createdAt
-    ? `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, '0')}-${String(createdAt.getDate()).padStart(2, '0')}`
+    ? isoDate(
+        createdAt.getFullYear(),
+        createdAt.getMonth() + 1,
+        createdAt.getDate(),
+      )
     : null;
   let year = today.getFullYear();
   let month = today.getMonth() + 1;
 
   for (;;) {
     const day = clampDayToMonth(dueDayOfMonth, year, month);
-    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const dateStr = isoDate(year, month, day);
     const predatesBill =
       createdAtDateStr !== null && dateStr < createdAtDateStr;
     if (!predatesBill && !paidDates.has(dateStr)) {
@@ -59,6 +63,59 @@ export function computeNearestUnpaidDueDate(
       year += 1;
     }
   }
+}
+
+function isoDate(year: number, month: number, day: number): string {
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+export function computeEligibleHistoricalCycles(
+  dueDayOfMonth: number,
+  existingInstances: BillInstance[],
+  today: Date,
+  createdAt: Date,
+): string[] {
+  const paid = new Set(existingInstances.map(i => i.dueDate));
+  const createdStr = isoDate(
+    createdAt.getFullYear(),
+    createdAt.getMonth() + 1,
+    createdAt.getDate(),
+  );
+  const todayYear = today.getFullYear();
+  const todayMonth = today.getMonth() + 1;
+
+  const result: string[] = [];
+  let year = createdAt.getFullYear();
+  let month = createdAt.getMonth() + 1;
+
+  while (year < todayYear || (year === todayYear && month <= todayMonth)) {
+    const day = clampDayToMonth(dueDayOfMonth, year, month);
+    const dateStr = isoDate(year, month, day);
+    if (dateStr >= createdStr && !paid.has(dateStr)) {
+      result.push(dateStr);
+    }
+    month += 1;
+    if (month > 12) {
+      month = 1;
+      year += 1;
+    }
+  }
+  return result;
+}
+
+export function computeExtendedHistoricalCycle(
+  dueDayOfMonth: number,
+  existingInstances: BillInstance[],
+): string | null {
+  if (existingInstances.length === 0) return null;
+  const oldest = existingInstances.reduce((min, i) =>
+    i.dueDate < min.dueDate ? i : min,
+  );
+  const [year, month] = oldest.dueDate.split('-').map(Number);
+  const prevMonth = month === 1 ? 12 : month - 1;
+  const prevYear = month === 1 ? year - 1 : year;
+  const day = clampDayToMonth(dueDayOfMonth, prevYear, prevMonth);
+  return isoDate(prevYear, prevMonth, day);
 }
 
 export function deriveBillState(
