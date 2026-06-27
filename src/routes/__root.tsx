@@ -97,7 +97,7 @@ function RootComponent() {
       <Outlet />
       <Toaster
         richColors
-        position="bottom-right"
+        position="top-center"
         closeButton
         toastOptions={{
           classNames: {

@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedSchedulesIndexRouteImport } from './routes/_authenticated/schedules/index'
 import { Route as AuthenticatedBillsIndexRouteImport } from './routes/_authenticated/bills/index'
+import { Route as ApiWebhooksClerkRouteImport } from './routes/api/webhooks/clerk'
 import { Route as UnauthenticatedSignInSplatRouteImport } from './routes/_unauthenticated/sign-in.$'
 import { Route as AuthenticatedSchedulesArchivedRouteImport } from './routes/_authenticated/schedules/archived'
 import { Route as AuthenticatedBillsArchivedRouteImport } from './routes/_authenticated/bills/archived'
@@ -49,6 +50,11 @@ const AuthenticatedBillsIndexRoute = AuthenticatedBillsIndexRouteImport.update({
   path: '/bills/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const ApiWebhooksClerkRoute = ApiWebhooksClerkRouteImport.update({
+  id: '/api/webhooks/clerk',
+  path: '/api/webhooks/clerk',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UnauthenticatedSignInSplatRoute =
   UnauthenticatedSignInSplatRouteImport.update({
     id: '/sign-in/$',
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/bills/archived': typeof AuthenticatedBillsArchivedRoute
   '/schedules/archived': typeof AuthenticatedSchedulesArchivedRoute
   '/sign-in/$': typeof UnauthenticatedSignInSplatRoute
+  '/api/webhooks/clerk': typeof ApiWebhooksClerkRoute
   '/bills/': typeof AuthenticatedBillsIndexRoute
   '/schedules/': typeof AuthenticatedSchedulesIndexRoute
 }
@@ -91,6 +98,7 @@ export interface FileRoutesByTo {
   '/bills/archived': typeof AuthenticatedBillsArchivedRoute
   '/schedules/archived': typeof AuthenticatedSchedulesArchivedRoute
   '/sign-in/$': typeof UnauthenticatedSignInSplatRoute
+  '/api/webhooks/clerk': typeof ApiWebhooksClerkRoute
   '/bills': typeof AuthenticatedBillsIndexRoute
   '/schedules': typeof AuthenticatedSchedulesIndexRoute
 }
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/_authenticated/bills/archived': typeof AuthenticatedBillsArchivedRoute
   '/_authenticated/schedules/archived': typeof AuthenticatedSchedulesArchivedRoute
   '/_unauthenticated/sign-in/$': typeof UnauthenticatedSignInSplatRoute
+  '/api/webhooks/clerk': typeof ApiWebhooksClerkRoute
   '/_authenticated/bills/': typeof AuthenticatedBillsIndexRoute
   '/_authenticated/schedules/': typeof AuthenticatedSchedulesIndexRoute
 }
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/bills/archived'
     | '/schedules/archived'
     | '/sign-in/$'
+    | '/api/webhooks/clerk'
     | '/bills/'
     | '/schedules/'
   fileRoutesByTo: FileRoutesByTo
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/bills/archived'
     | '/schedules/archived'
     | '/sign-in/$'
+    | '/api/webhooks/clerk'
     | '/bills'
     | '/schedules'
   id:
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/_authenticated/bills/archived'
     | '/_authenticated/schedules/archived'
     | '/_unauthenticated/sign-in/$'
+    | '/api/webhooks/clerk'
     | '/_authenticated/bills/'
     | '/_authenticated/schedules/'
   fileRoutesById: FileRoutesById
@@ -146,6 +158,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   UnauthenticatedRoute: typeof UnauthenticatedRouteWithChildren
+  ApiWebhooksClerkRoute: typeof ApiWebhooksClerkRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -191,6 +204,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/bills/'
       preLoaderRoute: typeof AuthenticatedBillsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/api/webhooks/clerk': {
+      id: '/api/webhooks/clerk'
+      path: '/api/webhooks/clerk'
+      fullPath: '/api/webhooks/clerk'
+      preLoaderRoute: typeof ApiWebhooksClerkRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_unauthenticated/sign-in/$': {
       id: '/_unauthenticated/sign-in/$'
@@ -261,6 +281,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   UnauthenticatedRoute: UnauthenticatedRouteWithChildren,
+  ApiWebhooksClerkRoute: ApiWebhooksClerkRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
