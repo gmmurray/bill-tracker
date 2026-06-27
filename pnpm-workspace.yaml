@@ -1,6 +1,6 @@
 allowBuilds:
-  '@clerk/shared': true
-  better-sqlite3: set this to true or false
+  "@clerk/shared": true
+  better-sqlite3: true
   esbuild: true
-  sharp: set this to true or false
-  workerd: set this to true or false
+  sharp: true
+  workerd: true
