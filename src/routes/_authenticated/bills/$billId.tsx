@@ -36,6 +36,10 @@ import {
   SelectValue,
 } from '#/components/ui/select';
 import { Switch } from '#/components/ui/switch';
+import {
+  BILL_CATEGORIES,
+  BILL_CATEGORY_LABELS,
+} from '#/features/bills/bills-constants';
 import { formatCurrency } from '#/features/bills/bills-helpers';
 import type { BillDetail, BillInstance } from '#/features/bills/bills-model';
 import {
@@ -174,6 +178,7 @@ type EditBillFormValues = {
   amountDollars: string;
   dueDayOfMonth: string;
   payScheduleId: string;
+  category: string;
   paymentUrl: string;
   isAutoPay: boolean;
   notes: string;
@@ -210,6 +215,7 @@ function BlueprintSection({
       amountDollars: '',
       dueDayOfMonth: '',
       payScheduleId: 'none',
+      category: 'none',
       paymentUrl: '',
       isAutoPay: false,
       notes: '',
@@ -222,6 +228,7 @@ function BlueprintSection({
       amountDollars: (bill.amountExpected / 100).toFixed(2),
       dueDayOfMonth: String(bill.dueDayOfMonth),
       payScheduleId: bill.payScheduleId ?? 'none',
+      category: bill.category ?? 'none',
       paymentUrl: bill.paymentUrl ?? '',
       isAutoPay: bill.isAutoPay,
       notes: bill.notes ?? '',
@@ -236,6 +243,10 @@ function BlueprintSection({
       dueDayOfMonth: parseInt(values.dueDayOfMonth, 10),
       payScheduleId:
         values.payScheduleId === 'none' ? null : values.payScheduleId,
+      category:
+        values.category === 'none'
+          ? null
+          : (values.category as (typeof BILL_CATEGORIES)[number]),
       paymentUrl:
         values.paymentUrl.trim() === '' ? null : values.paymentUrl.trim(),
       isAutoPay: values.isAutoPay,
@@ -379,6 +390,29 @@ function BlueprintSection({
             </div>
 
             <div className="flex flex-col gap-1.5">
+              <Label htmlFor="bill-category">Category</Label>
+              <Controller
+                control={control}
+                name="category"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="bill-category">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Uncategorized</SelectItem>
+                      {BILL_CATEGORIES.map(c => (
+                        <SelectItem key={c} value={c}>
+                          {BILL_CATEGORY_LABELS[c]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
               <Label htmlFor="bill-payment-url">Payment URL</Label>
               <Input
                 id="bill-payment-url"
@@ -474,6 +508,10 @@ function BlueprintSection({
                 )}
               </p>
             </div>
+            <DetailField
+              label="Category"
+              value={bill.category ? BILL_CATEGORY_LABELS[bill.category] : '—'}
+            />
             <DetailField
               label="Auto-pay"
               value={bill.isAutoPay ? 'Yes' : 'No'}

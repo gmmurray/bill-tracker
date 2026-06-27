@@ -6,6 +6,7 @@ import {
   text,
   unique,
 } from 'drizzle-orm/sqlite-core';
+import { BILL_CATEGORIES } from '#/features/bills/bills-constants';
 
 const isoNow = sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`;
 
@@ -49,6 +50,7 @@ export const bills = sqliteTable(
       .notNull()
       .default(false),
     notes: text('notes'),
+    category: text('category', { enum: BILL_CATEGORIES }),
     isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
     createdAt: text('created_at').default(isoNow).notNull(),
     updatedAt: text('updated_at')

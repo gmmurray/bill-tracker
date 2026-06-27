@@ -31,6 +31,7 @@ export const createBillSchema = createInsertSchema(bills)
     paymentUrl: true,
     isAutoPay: true,
     notes: true,
+    category: true,
   })
   .extend({
     name: z.string().min(1).max(100),

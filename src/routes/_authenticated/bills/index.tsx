@@ -34,6 +34,10 @@ import {
   SelectValue,
 } from '#/components/ui/select';
 import { Switch } from '#/components/ui/switch';
+import {
+  BILL_CATEGORIES,
+  BILL_CATEGORY_LABELS,
+} from '#/features/bills/bills-constants';
 import { formatCurrency, formatOrdinal } from '#/features/bills/bills-helpers';
 import type { BillWithSchedule } from '#/features/bills/bills-model';
 import {
@@ -156,6 +160,9 @@ function BillManagementPage() {
                   <th className="px-4 py-3 font-medium text-chill-text-muted">
                     Schedule
                   </th>
+                  <th className="px-4 py-3 font-medium text-chill-text-muted">
+                    Category
+                  </th>
                   <th className="px-4 py-3 font-medium text-chill-text-muted text-right">
                     Expected
                   </th>
@@ -260,6 +267,15 @@ function BillTableRow({
           </span>
         )}
       </td>
+      <td className="px-4 py-3">
+        {bill.category ? (
+          <span className="inline-flex items-center rounded-full bg-chill-purple-light px-2 py-0.5 text-xs text-chill-text">
+            {BILL_CATEGORY_LABELS[bill.category]}
+          </span>
+        ) : (
+          <span className="text-chill-text-muted">—</span>
+        )}
+      </td>
       <td className="px-4 py-3 text-right tabular-nums">
         {formatCurrency(bill.amountExpected)}
       </td>
@@ -332,6 +348,11 @@ function BillMobileCard({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <p className="font-medium text-chill-text truncate">{bill.name}</p>
+            {bill.category && (
+              <span className="inline-flex items-center rounded-full bg-chill-purple-light px-2 py-0.5 text-xs text-chill-text mt-1">
+                {BILL_CATEGORY_LABELS[bill.category]}
+              </span>
+            )}
             <p className="text-xs text-chill-text-muted mt-0.5">
               Due {bill.dueDayOfMonth} ·{' '}
               {bill.scheduleName === null ? (
@@ -400,6 +421,7 @@ type QuickAddFormValues = {
   amountDollars: string;
   dueDayOfMonth: string;
   payScheduleId: string;
+  category: string;
   isAutoPay: boolean;
   addAnother: boolean;
 };
@@ -409,6 +431,7 @@ const QUICK_ADD_DEFAULTS: QuickAddFormValues = {
   amountDollars: '',
   dueDayOfMonth: '',
   payScheduleId: 'none',
+  category: 'none',
   isAutoPay: false,
   addAnother: false,
 };
@@ -449,6 +472,10 @@ function QuickAddDrawer({
       dueDayOfMonth: parseInt(values.dueDayOfMonth, 10),
       payScheduleId:
         values.payScheduleId === 'none' ? null : values.payScheduleId,
+      category:
+        values.category === 'none'
+          ? null
+          : (values.category as (typeof BILL_CATEGORIES)[number]),
       isAutoPay: values.isAutoPay,
     });
     if (values.addAnother) {
@@ -573,6 +600,29 @@ function QuickAddDrawer({
             <p className="text-xs text-chill-text-muted">
               A budgeting group, not a deadline. You can always pay early.
             </p>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="bill-category">Category</Label>
+            <Controller
+              control={control}
+              name="category"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="bill-category">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Uncategorized</SelectItem>
+                    {BILL_CATEGORIES.map(c => (
+                      <SelectItem key={c} value={c}>
+                        {BILL_CATEGORY_LABELS[c]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">
