@@ -191,6 +191,7 @@ export const createBill = createServerFn({ method: 'POST' })
         paymentUrl: data.paymentUrl ?? null,
         isAutoPay: data.isAutoPay ?? false,
         notes: data.notes ?? null,
+        category: data.category ?? null,
       })
       .returning();
 
