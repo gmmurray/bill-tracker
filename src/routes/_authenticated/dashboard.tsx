@@ -32,6 +32,9 @@ import {
 import { cn } from '#/lib/utils';
 
 export const Route = createFileRoute('/_authenticated/dashboard')({
+  head: () => ({
+    meta: [{ title: 'Dashboard · BillChill' }],
+  }),
   loader: ({ context }) =>
     Promise.all([
       context.queryClient.ensureQueryData(

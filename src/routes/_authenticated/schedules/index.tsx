@@ -57,6 +57,9 @@ import {
 import { cn } from '#/lib/utils';
 
 export const Route = createFileRoute('/_authenticated/schedules/')({
+  head: () => ({
+    meta: [{ title: 'Schedules · BillChill' }],
+  }),
   loader: ({ context }) =>
     Promise.all([
       context.queryClient.ensureQueryData(paySchedulesQueryOptions()),

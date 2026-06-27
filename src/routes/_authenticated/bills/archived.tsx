@@ -26,6 +26,9 @@ import {
 import { formatShortDate } from '#/lib/utils';
 
 export const Route = createFileRoute('/_authenticated/bills/archived')({
+  head: () => ({
+    meta: [{ title: 'Archived bills · BillChill' }],
+  }),
   loader: ({ context }) =>
     Promise.all([
       context.queryClient.ensureQueryData(archivedBillsQueryOptions()),

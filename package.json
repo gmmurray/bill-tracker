@@ -22,6 +22,7 @@
   "dependencies": {
     "@clerk/tanstack-react-start": "^1.2.5",
     "@cloudflare/vite-plugin": "^1.26.0",
+    "@fontsource/lato": "^5.2.7",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "latest",
     "@tanstack/react-query": "^5.100.14",

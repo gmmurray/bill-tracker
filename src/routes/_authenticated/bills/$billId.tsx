@@ -62,6 +62,9 @@ export const Route = createFileRoute('/_authenticated/bills/$billId')({
     context.queryClient.ensureQueryData(
       billDetailQueryOptions(params.billId, deps.page, 10),
     ),
+  head: ({ loaderData }) => ({
+    meta: [{ title: `${loaderData?.name ?? 'Bill'} · BillChill` }],
+  }),
   component: BillDetailPage,
 });
 
@@ -458,7 +461,7 @@ function BlueprintSection({
               value={String(bill.dueDayOfMonth)}
             />
             <div>
-              <p className="text-xs font-medium text-chill-text-muted uppercase tracking-wide mb-1">
+              <p className="text-xs font-semibold text-chill-text-muted uppercase tracking-wide mb-1">
                 Schedule
               </p>
               <p className="text-sm text-chill-text">
@@ -476,7 +479,7 @@ function BlueprintSection({
               value={bill.isAutoPay ? 'Yes' : 'No'}
             />
             <div>
-              <p className="text-xs font-medium text-chill-text-muted uppercase tracking-wide mb-1">
+              <p className="text-xs font-semibold text-chill-text-muted uppercase tracking-wide mb-1">
                 Payment URL
               </p>
               {bill.paymentUrl ? (
@@ -494,7 +497,7 @@ function BlueprintSection({
             </div>
           </div>
           <div className="mt-5">
-            <p className="text-xs font-medium text-chill-text-muted uppercase tracking-wide mb-1">
+            <p className="text-xs font-semibold text-chill-text-muted uppercase tracking-wide mb-1">
               Notes
             </p>
             <p className="text-sm text-chill-text whitespace-pre-wrap">
@@ -510,7 +513,7 @@ function BlueprintSection({
 function DetailField({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs font-medium text-chill-text-muted uppercase tracking-wide mb-1">
+      <p className="text-xs font-semibold text-chill-text-muted uppercase tracking-wide mb-1">
         {label}
       </p>
       <p className="text-sm text-chill-text">{value}</p>

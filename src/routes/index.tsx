@@ -6,6 +6,36 @@ import { Button } from '#/components/ui/button';
 import { Card, CardFooter, CardHeader } from '#/components/ui/card';
 
 export const Route = createFileRoute('/')({
+  head: () => ({
+    meta: [
+      { title: 'BillChill — Pay bills on your schedule, not theirs' },
+      {
+        name: 'description',
+        content:
+          'BillChill is a personal bill tracker that bundles your bills into pay schedules that match your cash flow. Settle each group when it suits you, then forget about money until next cycle.',
+      },
+      {
+        property: 'og:title',
+        content: 'BillChill — Pay bills on your schedule, not theirs',
+      },
+      {
+        property: 'og:description',
+        content:
+          'Bundle your bills into pay schedules that match your cash flow. Settle each group when it suits you, then forget about money until next cycle.',
+      },
+      { property: 'og:url', content: 'https://billchill.app/' },
+      {
+        name: 'twitter:title',
+        content: 'BillChill — Pay bills on your schedule, not theirs',
+      },
+      {
+        name: 'twitter:description',
+        content:
+          'Bundle your bills into pay schedules that match your cash flow. Settle each group when it suits you, then forget about money until next cycle.',
+      },
+    ],
+    links: [{ rel: 'canonical', href: 'https://billchill.app/' }],
+  }),
   component: Home,
 });
 
@@ -33,11 +63,12 @@ function Home() {
             due dates.
           </h1>
           <p className="mt-5 text-xl xl:text-2xl text-chill-text-muted font-medium leading-snug">
-            Rule your bills by your own schedule.
+            Pay bills on your schedule, not theirs.
           </p>
           <p className="mt-5 text-base text-chill-text-muted leading-relaxed max-w-sm">
-            Group your bills into custom pay schedules. Pay everything at once,
-            on your terms, and forget about money until the next cycle.
+            Bundle your bills into pay schedules that match your cash flow.
+            Settle each group when it suits you, and forget about money until
+            the next cycle.
           </p>
           <Button
             asChild

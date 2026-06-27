@@ -22,22 +22,62 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     }),
     head: () => ({
       meta: [
+        { charSet: 'utf-8' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'theme-color', content: '#7ec8e8' },
+        { title: 'BillChill' },
         {
-          charSet: 'utf-8',
+          name: 'description',
+          content:
+            'Bundle your bills into pay schedules that match your life, then forget about money until next cycle.',
+        },
+        { property: 'og:site_name', content: 'BillChill' },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:title', content: 'BillChill' },
+        {
+          property: 'og:description',
+          content:
+            'Bundle your bills into pay schedules that match your life, then forget about money until next cycle.',
         },
         {
-          name: 'viewport',
-          content: 'width=device-width, initial-scale=1',
+          property: 'og:image',
+          content: 'https://billchill.app/og-image.jpg',
+        },
+        { property: 'og:image:width', content: '1200' },
+        { property: 'og:image:height', content: '630' },
+        {
+          property: 'og:image:alt',
+          content: 'BillChill — bill tracking that lets you chill.',
+        },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:title', content: 'BillChill' },
+        {
+          name: 'twitter:description',
+          content:
+            'Bundle your bills into pay schedules that match your life, then forget about money until next cycle.',
         },
         {
-          title: 'billchill.',
+          name: 'twitter:image',
+          content: 'https://billchill.app/og-image.jpg',
         },
       ],
       links: [
+        { rel: 'stylesheet', href: appCss },
+        { rel: 'manifest', href: '/site.webmanifest' },
+        { rel: 'icon', href: '/favicon.ico', sizes: 'any' },
         {
-          rel: 'stylesheet',
-          href: appCss,
+          rel: 'icon',
+          type: 'image/png',
+          sizes: '32x32',
+          href: '/favicon-32x32.png',
         },
+        {
+          rel: 'icon',
+          type: 'image/png',
+          sizes: '16x16',
+          href: '/favicon-16x16.png',
+        },
+        { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
       ],
     }),
     notFoundComponent: () => <NotFound />,

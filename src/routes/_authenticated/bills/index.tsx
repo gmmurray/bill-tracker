@@ -59,6 +59,9 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute('/_authenticated/bills/')({
   validateSearch: searchSchema,
+  head: () => ({
+    meta: [{ title: 'Bills · BillChill' }],
+  }),
   loaderDeps: ({ search }) => ({
     scheduleId: search.scheduleId,
     manualOnly: search.manualOnly,

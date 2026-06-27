@@ -6,6 +6,9 @@ export const Route = createFileRoute('/_unauthenticated/sign-in/$')({
   validateSearch: z.object({
     redirect_url: z.string().optional(),
   }),
+  head: () => ({
+    meta: [{ title: 'Sign in · BillChill' }],
+  }),
   component: Page,
 });
 

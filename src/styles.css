@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "@fontsource/lato/400.css";
+@import "@fontsource/lato/700.css";
 
 @keyframes fade-in {
   from {
@@ -102,6 +104,9 @@
 }
 
 @theme {
+  /* --- Typography --- */
+  --font-sans: "Lato", ui-sans-serif, system-ui, sans-serif;
+
   /* --- BillChill Color Palette --- */
 
   /* Base & Surfaces */
