@@ -12,9 +12,17 @@ export const Route = createFileRoute('/_unauthenticated/sign-in/$')({
 function Page() {
   return (
     <div className="flex flex-col items-center gap-6">
-      <span className="font-semibold text-xl tracking-tight text-chill-text">
-        Bill<span className="text-chill-ice">Chill.</span>
-      </span>
+      <div className="flex flex-col items-center gap-3">
+        <img
+          src="/logo.png"
+          alt=""
+          className="h-12 w-12"
+          aria-hidden="true"
+        />
+        <span className="font-semibold text-xl tracking-tight text-chill-text">
+          Bill<span className="text-chill-ice">Chill.</span>
+        </span>
+      </div>
       <SignIn
         appearance={{
           variables: {

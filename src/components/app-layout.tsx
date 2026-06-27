@@ -45,9 +45,17 @@ export default function AppLayout({ children }: PropsWithChildren) {
           </button>
           <Link
             to="/dashboard"
-            className="lg:hidden font-semibold text-xl tracking-tight text-center"
+            className="lg:hidden flex items-center gap-2 font-semibold text-xl tracking-tight"
           >
-            Bill<span className="text-chill-ice">Chill.</span>
+            <img
+              src="/logo.png"
+              alt=""
+              className="h-8 w-8"
+              aria-hidden="true"
+            />
+            <div>
+              Bill<span className="text-chill-ice">Chill.</span>
+            </div>
           </Link>
           <div className="hidden lg:block flex-1" />
           <div className="ml-auto">
@@ -69,9 +77,12 @@ function SidebarContents({ onLinkClick }: { onLinkClick?: () => void }) {
         <Link
           onClick={onLinkClick}
           to="/dashboard"
-          className="font-semibold text-xl tracking-tight"
+          className="flex items-center gap-2 font-semibold text-xl tracking-tight"
         >
-          Bill<span className="text-chill-ice">Chill.</span>
+          <img src="/logo.png" alt="" className="h-8 w-8" aria-hidden="true" />
+          <div>
+            Bill<span className="text-chill-ice">Chill.</span>
+          </div>
         </Link>
       </div>
 

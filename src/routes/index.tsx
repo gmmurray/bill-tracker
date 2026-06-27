@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { FiCheck } from 'react-icons/fi';
+
 import { Badge } from '#/components/ui/badge';
 import { Button } from '#/components/ui/button';
 import { Card, CardFooter, CardHeader } from '#/components/ui/card';
@@ -12,8 +13,16 @@ function Home() {
   return (
     <div className="bg-chill-bg text-chill-text min-h-screen flex flex-col px-12 lg:px-24 xl:px-40">
       <nav className="flex items-center py-8">
-        <span className="font-semibold text-xl tracking-tight">
-          Bill<span className="text-chill-ice">Chill.</span>
+        <span className="flex items-center gap-2 font-semibold text-xl tracking-tight">
+          <img
+            src="/logo.png"
+            alt=""
+            className="h-8 w-8"
+            aria-hidden="true"
+          />
+          <div>
+            Bill<span className="text-chill-ice">Chill.</span>
+          </div>
         </span>
         <Button asChild className="ml-auto">
           <Link to="/sign-in/$">Sign In</Link>
