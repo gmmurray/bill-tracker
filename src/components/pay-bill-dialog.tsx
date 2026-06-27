@@ -122,6 +122,10 @@ export function PayBillDialog({ bill, instances, open, onOpenChange }: Props) {
                 {formatPaidAt(recordedAt)}
               </span>
             </p>
+            <p className="text-xs mt-1">
+              Paying for an earlier cycle? Open the bill's detail page to log a
+              past payment.
+            </p>
           </div>
 
           <div className="flex flex-col gap-1.5">

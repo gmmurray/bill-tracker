@@ -157,6 +157,7 @@ function BillDetailPage() {
 
       <LogHistoricalPaymentDrawer
         billId={billId}
+        amountExpected={bill.amountExpected}
         open={logDrawerOpen}
         onOpenChange={setLogDrawerOpen}
       />
@@ -856,10 +857,12 @@ type LogPaymentFormValues = {
 
 function LogHistoricalPaymentDrawer({
   billId,
+  amountExpected,
   open,
   onOpenChange,
 }: {
   billId: string;
+  amountExpected: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -882,9 +885,13 @@ function LogHistoricalPaymentDrawer({
       )
         .toISOString()
         .slice(0, 16);
-      reset({ dueDate: '', amountDollars: '', paidAt: localPadded });
+      reset({
+        dueDate: '',
+        amountDollars: (amountExpected / 100).toFixed(2),
+        paidAt: localPadded,
+      });
     }
-  }, [open, reset]);
+  }, [open, reset, amountExpected]);
 
   async function onSubmit(values: LogPaymentFormValues) {
     try {
