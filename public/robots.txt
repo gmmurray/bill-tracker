@@ -1,8 +1,6 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow: /dashboard
-Disallow: /bills
-Disallow: /schedules
-Disallow: /sign-in
+Allow: /$
+Disallow: /
 
 Sitemap: https://billchill.app/sitemap.xml
