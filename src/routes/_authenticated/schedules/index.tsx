@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
-import { FiMoreVertical, FiX } from 'react-icons/fi';
+import { FiMoreVertical, FiPlus, FiX } from 'react-icons/fi';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -241,11 +241,13 @@ function ScheduleCard({
 
           <div className="px-6 py-3 border-t border-chill-border">
             <Button
-              variant="ghost"
-              size="sm"
+              variant="pay"
+              size="md"
               onClick={() => setAssignOpen(true)}
+              className="w-full sm:w-auto gap-1.5"
             >
-              + Assign Bills
+              <FiPlus size={16} aria-hidden="true" />
+              Assign Bills
             </Button>
           </div>
         </CardBody>
