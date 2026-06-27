@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import * as React from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { FiRepeat, FiX } from 'react-icons/fi';
 import { z } from 'zod';
 import {
@@ -22,7 +22,6 @@ import {
   ResponsiveDrawer,
   ResponsiveDrawerClose,
   ResponsiveDrawerContent,
-  ResponsiveDrawerDescription,
   ResponsiveDrawerFooter,
   ResponsiveDrawerHeader,
   ResponsiveDrawerTitle,
@@ -216,6 +215,7 @@ function BillManagementPage() {
           });
         }}
         createBillMutation={createBillMutation}
+        activeSchedules={activeSchedules}
       />
     </div>
   );
@@ -396,7 +396,18 @@ type QuickAddFormValues = {
   name: string;
   amountDollars: string;
   dueDayOfMonth: string;
+  payScheduleId: string;
+  isAutoPay: boolean;
   addAnother: boolean;
+};
+
+const QUICK_ADD_DEFAULTS: QuickAddFormValues = {
+  name: '',
+  amountDollars: '',
+  dueDayOfMonth: '',
+  payScheduleId: 'none',
+  isAutoPay: false,
+  addAnother: false,
 };
 
 function QuickAddDrawer({
@@ -404,24 +415,27 @@ function QuickAddDrawer({
   onOpenChange,
   onSuccess,
   createBillMutation,
+  activeSchedules,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: (billId: string) => void;
   createBillMutation: ReturnType<typeof useCreateBill>;
+  activeSchedules: Array<{ id: string; name: string }>;
 }) {
   const {
     register,
     handleSubmit,
     reset,
     setFocus,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<QuickAddFormValues>({
-    defaultValues: { addAnother: false },
+    defaultValues: QUICK_ADD_DEFAULTS,
   });
 
   React.useEffect(() => {
-    if (!open) reset({ addAnother: false });
+    if (!open) reset(QUICK_ADD_DEFAULTS);
   }, [open, reset]);
 
   async function onSubmit(values: QuickAddFormValues) {
@@ -430,15 +444,12 @@ function QuickAddDrawer({
       name: values.name,
       amountExpected: amountCents,
       dueDayOfMonth: parseInt(values.dueDayOfMonth, 10),
-      isAutoPay: false,
+      payScheduleId:
+        values.payScheduleId === 'none' ? null : values.payScheduleId,
+      isAutoPay: values.isAutoPay,
     });
     if (values.addAnother) {
-      reset({
-        name: '',
-        amountDollars: '',
-        dueDayOfMonth: '',
-        addAnother: true,
-      });
+      reset({ ...QUICK_ADD_DEFAULTS, addAnother: true });
       setFocus('name');
       return;
     }
@@ -449,12 +460,7 @@ function QuickAddDrawer({
     <ResponsiveDrawer open={open} onOpenChange={onOpenChange}>
       <ResponsiveDrawerContent>
         <ResponsiveDrawerHeader>
-          <div>
-            <ResponsiveDrawerTitle>Add New Bill</ResponsiveDrawerTitle>
-            <ResponsiveDrawerDescription>
-              Fill in the basics. You can set more details after.
-            </ResponsiveDrawerDescription>
-          </div>
+          <ResponsiveDrawerTitle>Add New Bill</ResponsiveDrawerTitle>
           <ResponsiveDrawerClose
             className={cn(
               'rounded-md p-1.5 text-chill-text-muted transition-colors',
@@ -538,6 +544,53 @@ function QuickAddDrawer({
                 {errors.dueDayOfMonth.message}
               </p>
             )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="bill-schedule">Pay schedule</Label>
+            <Controller
+              control={control}
+              name="payScheduleId"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="bill-schedule">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Unassigned</SelectItem>
+                    {activeSchedules.map(s => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            <p className="text-xs text-chill-text-muted">
+              A budgeting group, not a deadline. You can always pay early.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="bill-auto-pay">Auto-pay</Label>
+            <div className="flex items-center gap-2 h-9">
+              <Controller
+                control={control}
+                name="isAutoPay"
+                render={({ field }) => (
+                  <Switch
+                    id="bill-auto-pay"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
+              />
+            </div>
+            <p className="text-xs text-chill-text-muted">
+              Just a label — auto-pay bills still need a payment record to
+              count.
+            </p>
           </div>
         </form>
 

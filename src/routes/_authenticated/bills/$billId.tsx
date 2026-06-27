@@ -370,6 +370,9 @@ function BlueprintSection({
                   </Select>
                 )}
               />
+              <p className="text-xs text-chill-text-muted">
+                A budgeting group, not a deadline. You can always pay early.
+              </p>
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -402,6 +405,10 @@ function BlueprintSection({
                   )}
                 />
               </div>
+              <p className="text-xs text-chill-text-muted">
+                Just a label — auto-pay bills still need a payment record to
+                count.
+              </p>
             </div>
 
             <div className="flex flex-col gap-1.5 col-span-2">
