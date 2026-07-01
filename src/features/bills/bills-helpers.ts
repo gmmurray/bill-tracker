@@ -289,12 +289,19 @@ export function targetDueDateForSession(
 }
 
 export function isScheduleSessionComplete(
-  bills: Pick<Bill, 'id' | 'dueDayOfMonth'>[],
+  bills: Pick<Bill, 'id' | 'dueDayOfMonth' | 'createdAt'>[],
   sessionDate: Date,
   instancesByBillId: Map<string, BillInstance[]>,
 ): boolean {
   for (const bill of bills) {
     const target = targetDueDateForSession(bill.dueDayOfMonth, sessionDate);
+    const createdAt = new Date(bill.createdAt);
+    const createdAtDateStr = isoDate(
+      createdAt.getFullYear(),
+      createdAt.getMonth() + 1,
+      createdAt.getDate(),
+    );
+    if (target < createdAtDateStr) continue;
     const instances = instancesByBillId.get(bill.id) ?? [];
     if (!instances.some(i => i.dueDate === target)) return false;
   }
@@ -309,7 +316,10 @@ export function msUntilNextMidnight(now: Date): number {
 
 export function selectActiveSchedule(
   schedules: PaySchedule[],
-  bills: Pick<Bill, 'id' | 'dueDayOfMonth' | 'payScheduleId'>[],
+  bills: Pick<
+    Bill,
+    'id' | 'dueDayOfMonth' | 'payScheduleId' | 'createdAt'
+  >[],
   instancesByBillId: Map<string, BillInstance[]>,
   today: Date,
 ): PaySchedule | null {

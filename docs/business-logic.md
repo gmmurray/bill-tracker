@@ -101,6 +101,8 @@ For each active schedule, compute `currentSession`:
 
 This rule means a schedule with unfinished work *stays* the active one even after the calendar moves past its pay date. Sessions queue chronologically; they don't fragment between rows when calendar pay dates pass.
 
+**Session-completeness respects `bill.createdAt`.** When deciding whether a bill is "unpaid work" for a given session, targets whose `dueDate` predates the bill's `createdAt` are treated as satisfied — the bill didn't exist for that cycle, so it isn't owed for it. Without this guard, adding a bill mid-month causes the *previous* pay session to appear unfinished and hold the schedule active indefinitely. This mirrors the same guard in [Nearest Unpaid Date Logic](#nearest-unpaid-date-logic).
+
 A bill on a schedule where the cycle paid in this session may differ from this calendar month — e.g., a bill due the 1st paid on a 15th-pay-date schedule pays for *next* month's 1st. The session's target dueDate is `computeNearestUnpaidDueDate(bill, instances, today)` per bill, which may resolve to a future month.
 
 ---

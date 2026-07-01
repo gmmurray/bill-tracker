@@ -731,6 +731,19 @@ describe('isScheduleSessionComplete', () => {
     const map = makeInstMap([['b1', [makeInstance('b1', '2026-06-15')]]]);
     expect(isScheduleSessionComplete([bill], SESSION, map)).toBe(false);
   });
+
+  it('skips bills whose target dueDate predates createdAt', () => {
+    // target for due-20 + session Jun 15 = 2026-06-20
+    // bill created Jun 27 → June 20 predates it → skipped, not considered unpaid work
+    const bill = makeBill('b1', 20, null, '2026-06-27T00:00:00.000Z');
+    expect(isScheduleSessionComplete([bill], SESSION, new Map())).toBe(true);
+  });
+
+  it('does not skip bills whose target dueDate equals createdAt', () => {
+    // target Jun 20; bill createdAt Jun 20 → not predating → must have instance
+    const bill = makeBill('b1', 20, null, '2026-06-20T00:00:00.000Z');
+    expect(isScheduleSessionComplete([bill], SESSION, new Map())).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -823,6 +836,25 @@ describe('selectActiveSchedule', () => {
     const sB = makeSchedule('sB', 29, 'B');
     const billA = makeBill('bA', 10, 'sA');
     const billB = makeBill('bB', 10, 'sB');
+    const map = makeInstMap([
+      ['bA', []],
+      ['bB', []],
+    ]);
+    const result = selectActiveSchedule([sA, sB], [billA, billB], map, today);
+    expect(result?.id).toBe('sA');
+  });
+
+  it('ignores past sessions that predate all bills\' createdAt', () => {
+    // Reproduces reported bug: today Jul 1 2026.
+    // Schedule A payDate 1, bills due 1 created Jun 27 → past Jul 1 unpaid → currentSession Jul 1
+    // Schedule B payDate 15, bills due 15 created Jun 27 → past Jun 15 predates createdAt,
+    //   so June 15 session is vacuously complete → currentSession Jul 15
+    // A (Jul 1) < B (Jul 15) → A wins
+    const today = new Date(2026, 6, 1);
+    const sA = makeSchedule('sA', 1, 'first');
+    const sB = makeSchedule('sB', 15, 'second');
+    const billA = makeBill('bA', 1, 'sA', '2026-06-27T00:00:00.000Z');
+    const billB = makeBill('bB', 15, 'sB', '2026-06-27T00:00:00.000Z');
     const map = makeInstMap([
       ['bA', []],
       ['bB', []],
