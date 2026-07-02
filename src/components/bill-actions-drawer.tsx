@@ -25,10 +25,7 @@ import type {
   BillState,
   BillWithSchedule,
 } from '#/features/bills/bills-model';
-import {
-  useBills,
-  useCurrentMonthInstances,
-} from '#/features/bills/bills-queries';
+import { useBills, useRecentInstances } from '#/features/bills/bills-queries';
 import { usePaySchedules } from '#/features/pay-schedules/pay-schedules-queries';
 import { cn } from '#/lib/utils';
 
@@ -59,7 +56,7 @@ export function BillActionsProvider({
 }) {
   const billsQuery = useBills({ scheduleId: 'all', manualOnly: false });
   const schedulesQuery = usePaySchedules();
-  const instancesQuery = useCurrentMonthInstances();
+  const instancesQuery = useRecentInstances();
 
   const [today, setToday] = React.useState(() => new Date());
 

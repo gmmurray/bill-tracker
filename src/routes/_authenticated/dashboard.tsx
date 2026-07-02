@@ -22,7 +22,7 @@ import type {
 } from '#/features/bills/bills-model';
 import {
   billsQueryOptions,
-  currentMonthInstancesQueryOptions,
+  recentInstancesQueryOptions,
   useBills,
 } from '#/features/bills/bills-queries';
 import {
@@ -41,7 +41,7 @@ export const Route = createFileRoute('/_authenticated/dashboard')({
         billsQueryOptions({ scheduleId: 'all', manualOnly: false }),
       ),
       context.queryClient.ensureQueryData(paySchedulesQueryOptions()),
-      context.queryClient.ensureQueryData(currentMonthInstancesQueryOptions()),
+      context.queryClient.ensureQueryData(recentInstancesQueryOptions()),
     ]),
   component: DashboardPage,
 });

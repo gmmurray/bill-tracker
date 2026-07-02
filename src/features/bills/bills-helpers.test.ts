@@ -844,7 +844,7 @@ describe('selectActiveSchedule', () => {
     expect(result?.id).toBe('sA');
   });
 
-  it('ignores past sessions that predate all bills\' createdAt', () => {
+  it("ignores past sessions that predate all bills' createdAt", () => {
     // Reproduces reported bug: today Jul 1 2026.
     // Schedule A payDate 1, bills due 1 created Jun 27 → past Jul 1 unpaid → currentSession Jul 1
     // Schedule B payDate 15, bills due 15 created Jun 27 → past Jun 15 predates createdAt,

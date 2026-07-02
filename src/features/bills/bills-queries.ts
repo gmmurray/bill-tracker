@@ -25,7 +25,7 @@ import {
   getArchivedBillsCount,
   getBillDetail,
   listBills,
-  listCurrentMonthInstances,
+  listRecentInstances,
   logHistoricalPayment,
   recordBillPayment,
   restoreBill,
@@ -41,8 +41,7 @@ export const billKeys = {
   detail: (id: string) => [...billKeys.details(), id] as const,
   archived: () => [...billKeys.all, 'archived'] as const,
   archivedCount: () => [...billKeys.all, 'archivedCount'] as const,
-  currentMonthInstances: () =>
-    [...billKeys.all, 'currentMonthInstances'] as const,
+  recentInstances: () => [...billKeys.all, 'recentInstances'] as const,
 };
 
 export function billsQueryOptions(filters: BillListFilters) {
@@ -164,15 +163,15 @@ export function useArchiveBill() {
   });
 }
 
-export function currentMonthInstancesQueryOptions() {
+export function recentInstancesQueryOptions() {
   return queryOptions({
-    queryKey: billKeys.currentMonthInstances(),
-    queryFn: () => listCurrentMonthInstances(),
+    queryKey: billKeys.recentInstances(),
+    queryFn: () => listRecentInstances(),
   });
 }
 
-export function useCurrentMonthInstances() {
-  return useQuery(currentMonthInstancesQueryOptions());
+export function useRecentInstances() {
+  return useQuery(recentInstancesQueryOptions());
 }
 
 export function useRecordBillPayment() {
@@ -187,7 +186,7 @@ export function useRecordBillPayment() {
         queryKey: billKeys.detail(variables.billId),
       });
       queryClient.invalidateQueries({
-        queryKey: billKeys.currentMonthInstances(),
+        queryKey: billKeys.recentInstances(),
       });
     },
     onError: err => {
@@ -216,7 +215,7 @@ export function useUpdateBillInstance() {
         queryKey: billKeys.detail(variables.billId),
       });
       queryClient.invalidateQueries({
-        queryKey: billKeys.currentMonthInstances(),
+        queryKey: billKeys.recentInstances(),
       });
     },
     onError: err => {
@@ -236,7 +235,7 @@ export function useDeleteBillInstance() {
         queryKey: billKeys.detail(variables.billId),
       });
       queryClient.invalidateQueries({
-        queryKey: billKeys.currentMonthInstances(),
+        queryKey: billKeys.recentInstances(),
       });
     },
     onError: err => {
@@ -257,7 +256,7 @@ export function useLogHistoricalPayment() {
         queryKey: billKeys.detail(variables.billId),
       });
       queryClient.invalidateQueries({
-        queryKey: billKeys.currentMonthInstances(),
+        queryKey: billKeys.recentInstances(),
       });
     },
     onError: err => {
@@ -330,7 +329,7 @@ export function useDeleteBill() {
       queryClient.invalidateQueries({ queryKey: billKeys.archivedCount() });
       queryClient.invalidateQueries({ queryKey: billKeys.lists() });
       queryClient.invalidateQueries({
-        queryKey: billKeys.currentMonthInstances(),
+        queryKey: billKeys.recentInstances(),
       });
     },
   });

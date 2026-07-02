@@ -316,10 +316,7 @@ export function msUntilNextMidnight(now: Date): number {
 
 export function selectActiveSchedule(
   schedules: PaySchedule[],
-  bills: Pick<
-    Bill,
-    'id' | 'dueDayOfMonth' | 'payScheduleId' | 'createdAt'
-  >[],
+  bills: Pick<Bill, 'id' | 'dueDayOfMonth' | 'payScheduleId' | 'createdAt'>[],
   instancesByBillId: Map<string, BillInstance[]>,
   today: Date,
 ): PaySchedule | null {

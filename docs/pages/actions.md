@@ -158,7 +158,7 @@ Drawer reads:
 |---|---|
 | `useBills({ scheduleId: 'all', manualOnly: false })` | All active bills |
 | `usePaySchedules()` | Schedule lookup for active-schedule detection |
-| `useCurrentMonthInstances()` | State derivation |
+| `useRecentInstances()` | State derivation (prev + current month) |
 | `useRecordBillPayment()` | Pay confirmation dialog |
 
 All four are already loader-pre-warmed on the dashboard. When the drawer opens from a non-dashboard route, they fetch on demand. Queries are deduplicated app-wide, so no extra cost.

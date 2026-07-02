@@ -7,7 +7,6 @@ import {
   getTableColumns,
   inArray,
   isNull,
-  like,
   sql,
 } from 'drizzle-orm';
 import { type Database, getDb } from '#/db/client';
@@ -252,7 +251,7 @@ export const restoreBill = createServerFn({ method: 'POST' })
       .where(and(eq(bills.id, data.billId), eq(bills.userId, userId)));
   });
 
-export const listCurrentMonthInstances = createServerFn({
+export const listRecentInstances = createServerFn({
   method: 'GET',
 }).handler(async () => {
   const { userId } = await requireAuth({ data: {} });
@@ -260,15 +259,21 @@ export const listCurrentMonthInstances = createServerFn({
 
   const now = new Date();
   const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const monthPrefix = `${year}-${month}-%`;
+  const month = now.getMonth() + 1;
+  const prevMonth = month === 1 ? 12 : month - 1;
+  const prevYear = month === 1 ? year - 1 : year;
+  const currentPrefix = `${year}-${String(month).padStart(2, '0')}-%`;
+  const prevPrefix = `${prevYear}-${String(prevMonth).padStart(2, '0')}-%`;
 
   return db
     .select(getTableColumns(billInstances))
     .from(billInstances)
     .innerJoin(bills, eq(billInstances.billId, bills.id))
     .where(
-      and(eq(bills.userId, userId), like(billInstances.dueDate, monthPrefix)),
+      and(
+        eq(bills.userId, userId),
+        sql`(${billInstances.dueDate} LIKE ${currentPrefix} OR ${billInstances.dueDate} LIKE ${prevPrefix})`,
+      ),
     );
 });
 

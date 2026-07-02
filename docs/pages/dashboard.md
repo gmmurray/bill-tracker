@@ -156,7 +156,7 @@ All from existing hooks — no new server functions.
 |---|---|
 | `useBills({ scheduleId: 'all', manualOnly: false })` | All active bill blueprints |
 | `usePaySchedules()` | Active schedules — used to pick the next-upcoming |
-| `useCurrentMonthInstances()` | Payment ledger for this month — drives state derivation, snapshot metrics |
+| `useRecentInstances()` | Payment ledger for the previous + current month — drives state derivation, session-completeness, snapshot metrics |
 | `useRecordBillPayment()` | Pay button confirmation dialog |
 
 In-memory derivation:
@@ -224,11 +224,9 @@ loader: ({ context }) =>
       billsQueryOptions({ scheduleId: 'all', manualOnly: false }),
     ),
     context.queryClient.ensureQueryData(paySchedulesQueryOptions()),
-    context.queryClient.ensureQueryData(currentMonthInstancesQueryOptions()),
+    context.queryClient.ensureQueryData(recentInstancesQueryOptions()),
   ]),
 ```
-
-`currentMonthInstancesQueryOptions` does not yet exist — it needs to be extracted from `useCurrentMonthInstances` following the pattern used for the other loader-backed hooks. Small refactor; add it alongside dashboard build.
 
 ---
 
