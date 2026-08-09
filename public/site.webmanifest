@@ -1,6 +1,8 @@
 {
+  "$schema": "https://json.schemastore.org/web-manifest.json",
   "name": "BillChill",
   "short_name": "BillChill",
+  "start_url": "/dashboard",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
