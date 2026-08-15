@@ -31,3 +31,9 @@ export class ConflictError extends AppError {
     super('CONFLICT', message);
   }
 }
+
+export class ValidationError extends AppError {
+  constructor(message = 'Invalid input') {
+    super('VALIDATION', message);
+  }
+}

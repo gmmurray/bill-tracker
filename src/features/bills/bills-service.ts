@@ -7,13 +7,18 @@ import {
   getTableColumns,
   inArray,
   isNull,
+  like,
+  or,
   sql,
 } from 'drizzle-orm';
 import { type Database, getDb } from '#/db/client';
 import { billInstances, bills, paySchedules } from '#/db/schema';
 import { getAuthUserId, requireAuth } from '#/features/auth/auth-service';
 import { ConflictError, NotFoundError } from '#/lib/errors';
-import { computeNearestUnpaidDueDate } from './bills-helpers';
+import {
+  assertCanonicalCycle,
+  computeNearestUnpaidDueDate,
+} from './bills-helpers';
 import {
   type Bill,
   type BillInstance,
@@ -251,6 +256,16 @@ export const restoreBill = createServerFn({ method: 'POST' })
       .where(and(eq(bills.id, data.billId), eq(bills.userId, userId)));
   });
 
+/**
+ * The ledger window the client derives state from: previous, current, and next
+ * month.
+ *
+ * Next month is not optional. Pay-ahead writes instances with future `dueDate`s
+ * (settling September's cycle during the August session), and every client-side
+ * derivation — including the Pay dialog's "Applying to:" line — treats a missing
+ * instance as unpaid. Omitting next month made the client believe a settled
+ * cycle was still owed while the server, which reads the full ledger, disagreed.
+ */
 export const listRecentInstances = createServerFn({
   method: 'GET',
 }).handler(async () => {
@@ -258,12 +273,12 @@ export const listRecentInstances = createServerFn({
   const db = getDb();
 
   const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-  const prevMonth = month === 1 ? 12 : month - 1;
-  const prevYear = month === 1 ? year - 1 : year;
-  const currentPrefix = `${year}-${String(month).padStart(2, '0')}-%`;
-  const prevPrefix = `${prevYear}-${String(prevMonth).padStart(2, '0')}-%`;
+  const monthPrefixes = [-1, 0, 1].map(offset => {
+    const zero = now.getFullYear() * 12 + now.getMonth() + offset;
+    const year = Math.floor(zero / 12);
+    const month = (zero % 12) + 1;
+    return `${year}-${String(month).padStart(2, '0')}-%`;
+  });
 
   return db
     .select(getTableColumns(billInstances))
@@ -272,7 +287,7 @@ export const listRecentInstances = createServerFn({
     .where(
       and(
         eq(bills.userId, userId),
-        sql`(${billInstances.dueDate} LIKE ${currentPrefix} OR ${billInstances.dueDate} LIKE ${prevPrefix})`,
+        or(...monthPrefixes.map(prefix => like(billInstances.dueDate, prefix))),
       ),
     );
 });
@@ -286,17 +301,27 @@ export const recordBillPayment = createServerFn({ method: 'POST' })
     const bill = await getBillById(db, userId, data.billId);
     if (!bill) throw new NotFoundError('Bill not found');
 
-    const existingInstances = await db
-      .select()
-      .from(billInstances)
-      .where(eq(billInstances.billId, data.billId));
+    // The caller may name the exact cycle it is settling. The dashboard does —
+    // it renders one row per cycle, so the row the user clicked *is* the cycle
+    // to record, with no inference. Callers that omit it fall back to
+    // nearest-unpaid, which is what the older surfaces rely on.
+    let dueDate: string;
+    if (data.dueDate) {
+      assertCanonicalCycle(data.dueDate, bill.dueDayOfMonth, bill.createdAt);
+      dueDate = data.dueDate;
+    } else {
+      const existingInstances = await db
+        .select()
+        .from(billInstances)
+        .where(eq(billInstances.billId, data.billId));
 
-    const dueDate = computeNearestUnpaidDueDate(
-      bill.dueDayOfMonth,
-      existingInstances,
-      new Date(),
-      new Date(bill.createdAt),
-    );
+      dueDate = computeNearestUnpaidDueDate(
+        bill.dueDayOfMonth,
+        existingInstances,
+        new Date(),
+        new Date(bill.createdAt),
+      );
+    }
 
     try {
       const [created] = await db

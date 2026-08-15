@@ -177,8 +177,11 @@ export function useRecentInstances() {
 export function useRecordBillPayment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { billId: string; amountActual: number }) =>
-      recordBillPayment({ data: input }),
+    mutationFn: (input: {
+      billId: string;
+      amountActual: number;
+      dueDate?: string;
+    }) => recordBillPayment({ data: input }),
     onSuccess: (_data, variables) => {
       toast.success('Payment recorded');
       queryClient.invalidateQueries({ queryKey: billKeys.lists() });

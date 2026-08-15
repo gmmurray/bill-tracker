@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  assertCanonicalCycle,
   clampDayToMonth,
   computeEligibleHistoricalCycles,
   computeExtendedHistoricalCycle,
@@ -994,5 +995,75 @@ describe('computeExtendedHistoricalCycle', () => {
       makeInstance('b1', '2026-07-10'),
     ];
     expect(computeExtendedHistoricalCycle(10, instances)).toBe('2026-04-10');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// assertCanonicalCycle
+// ---------------------------------------------------------------------------
+
+describe('assertCanonicalCycle', () => {
+  const createdAt = '2026-01-15T12:00:00.000Z';
+
+  it('accepts a normal cycle', () => {
+    expect(() =>
+      assertCanonicalCycle('2026-08-01', 1, createdAt),
+    ).not.toThrow();
+  });
+
+  it('accepts every cycle the outlook can produce for a bill', () => {
+    // The dashboard offers this month's and next month's occurrence; both must
+    // survive the guard or Mark Paid fails on a row the UI itself rendered.
+    for (const dueDay of [1, 5, 15, 28, 30, 31]) {
+      for (const [year, month] of [
+        [2026, 1],
+        [2026, 2],
+        [2026, 8],
+        [2026, 12],
+        [2027, 1],
+      ] as const) {
+        const day = clampDayToMonth(dueDay, year, month);
+        const iso = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        expect(() =>
+          assertCanonicalCycle(iso, dueDay, '2025-01-01T00:00:00.000Z'),
+        ).not.toThrow();
+      }
+    }
+  });
+
+  it('accepts a clamped short-month cycle', () => {
+    expect(() =>
+      assertCanonicalCycle('2026-02-28', 31, '2025-01-01T00:00:00.000Z'),
+    ).not.toThrow();
+  });
+
+  it('rejects a date that is not an occurrence of the due day', () => {
+    expect(() => assertCanonicalCycle('2026-08-02', 1, createdAt)).toThrow(
+      /not a billing cycle/,
+    );
+  });
+
+  it('rejects an unclamped date in a short month', () => {
+    expect(() =>
+      assertCanonicalCycle('2026-02-31', 31, '2025-01-01T00:00:00.000Z'),
+    ).toThrow(/not a billing cycle/);
+  });
+
+  it('rejects a cycle that predates the bill', () => {
+    expect(() => assertCanonicalCycle('2026-01-01', 1, createdAt)).toThrow(
+      /predates the bill/,
+    );
+  });
+
+  it('accepts the first cycle on or after creation', () => {
+    expect(() =>
+      assertCanonicalCycle('2026-02-01', 1, createdAt),
+    ).not.toThrow();
+  });
+
+  it('rejects a malformed date', () => {
+    expect(() => assertCanonicalCycle('not-a-date', 1, createdAt)).toThrow(
+      /Invalid billing cycle date/,
+    );
   });
 });

@@ -84,6 +84,11 @@ export const billIdSchema = z.object({
 export const recordBillPaymentSchema = z.object({
   billId: z.uuid(),
   amountActual: z.number().int().positive(),
+  /**
+   * The exact cycle being settled. Omit to fall back to nearest-unpaid.
+   * The server rejects dates that aren't a canonical cycle of the bill.
+   */
+  dueDate: z.iso.date().optional(),
 });
 
 export const updateBillInstanceSchema = z.object({

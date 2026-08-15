@@ -4,6 +4,7 @@ import type {
   BillState,
 } from '#/features/bills/bills-model';
 import type { PaySchedule } from '#/features/pay-schedules/pay-schedules-model';
+import { ValidationError } from '#/lib/errors';
 
 export function formatCurrency(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
@@ -67,6 +68,38 @@ export function computeNearestUnpaidDueDate(
 
 function isoDate(year: number, month: number, day: number): string {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+/**
+ * Guards that a client-supplied `dueDate` names a real cycle of this bill.
+ *
+ * Every `dueDate` in the ledger must equal `clampDayToMonth(dueDayOfMonth, y, m)`
+ * for some month — instances on any other date are invisible to state derivation
+ * and show up as orphaned ledger rows. Cycles predating the bill are rejected for
+ * the same reason the derivation walk skips them: the bill wasn't owed yet.
+ */
+export function assertCanonicalCycle(
+  dueDate: string,
+  dueDayOfMonth: number,
+  createdAt: string,
+): void {
+  const [year, month, day] = dueDate.split('-').map(Number);
+  if (!year || !month || !day) {
+    throw new ValidationError('Invalid billing cycle date');
+  }
+  if (clampDayToMonth(dueDayOfMonth, year, month) !== day) {
+    throw new ValidationError('That date is not a billing cycle for this bill');
+  }
+
+  const created = new Date(createdAt);
+  const createdKey = isoDate(
+    created.getFullYear(),
+    created.getMonth() + 1,
+    created.getDate(),
+  );
+  if (dueDate < createdKey) {
+    throw new ValidationError('That cycle predates the bill');
+  }
 }
 
 export function computeEligibleHistoricalCycles(

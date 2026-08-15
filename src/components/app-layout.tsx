@@ -1,12 +1,19 @@
 import { UserButton } from '@clerk/tanstack-react-start';
 import { Link } from '@tanstack/react-router';
-import type { PropsWithChildren } from 'react';
+import type { PropsWithChildren, ReactNode } from 'react';
 import * as React from 'react';
 import { FiCalendar, FiFileText, FiGrid, FiMenu } from 'react-icons/fi';
-import { AttentionBanner } from '#/components/attention-banner';
-import { BillActionsNavButton } from '#/components/bill-actions-nav-button';
 
-export default function AppLayout({ children }: PropsWithChildren) {
+/**
+ * `banner` and `navButton` are injected by the shell so the legacy and outlook
+ * chrome can coexist while the rebuilt dashboard is evaluated side by side.
+ */
+type Props = PropsWithChildren<{
+  banner?: ReactNode;
+  navButton?: ReactNode;
+}>;
+
+export default function AppLayout({ children, banner, navButton }: Props) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const closeMobile = () => setMobileOpen(false);
 
@@ -58,12 +65,10 @@ export default function AppLayout({ children }: PropsWithChildren) {
             </div>
           </Link>
           <div className="hidden lg:block flex-1" />
-          <div className="ml-auto">
-            <BillActionsNavButton />
-          </div>
+          <div className="ml-auto">{navButton}</div>
         </header>
 
-        <AttentionBanner />
+        {banner}
         <main className="flex-1 overflow-auto">{children}</main>
       </div>
     </div>
@@ -95,6 +100,13 @@ function SidebarContents({ onLinkClick }: { onLinkClick?: () => void }) {
           Dashboard
         </NavLink>
         <NavLink
+          to="/dashboard-2"
+          icon={<FiGrid size={16} aria-hidden="true" />}
+          onClick={onLinkClick}
+        >
+          Dashboard v2
+        </NavLink>
+        <NavLink
           to="/bills"
           icon={<FiFileText size={16} aria-hidden="true" />}
           onClick={onLinkClick}
@@ -123,7 +135,7 @@ function NavLink({
   onClick,
   children,
 }: {
-  to: '/dashboard' | '/bills' | '/schedules';
+  to: '/dashboard' | '/dashboard-2' | '/bills' | '/schedules';
   icon: React.ReactNode;
   onClick?: () => void;
   children: React.ReactNode;
