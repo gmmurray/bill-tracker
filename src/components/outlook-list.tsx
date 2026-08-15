@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import * as React from 'react';
-import { FiRepeat } from 'react-icons/fi';
+import { FiChevronDown, FiChevronRight, FiRepeat } from 'react-icons/fi';
 import { PayCycleDialog } from '#/components/pay-cycle-dialog';
 import { Badge } from '#/components/ui/badge';
 import { Button } from '#/components/ui/button';
@@ -10,7 +10,6 @@ import {
   BUCKET_LABELS,
   BUCKET_ORDER,
   type OutlookBucket,
-  type OutlookTotals,
 } from '#/features/bills/bills-outlook';
 import { cn } from '#/lib/utils';
 
@@ -128,41 +127,81 @@ const bucketHeaderStyles: Record<OutlookBucket, string> = {
 export function BucketSection({
   bucket,
   cycles,
-  totals,
   onPay,
 }: {
   bucket: OutlookBucket;
   cycles: BillCycle[];
-  totals: OutlookTotals;
   onPay: (cycle: BillCycle) => void;
 }) {
+  const owed = cycles.filter(c => !c.isPaid);
+  const settledCents = cycles
+    .filter(c => c.isPaid)
+    .reduce((sum, c) => sum + c.amountCents, 0);
+  const owedCents = owed.reduce((sum, c) => sum + c.amountCents, 0);
+  const fullySettled = cycles.length > 0 && owed.length === 0;
+
+  // A section with nothing left to act on folds away by default. The header
+  // keeps the count and the total on screen, so collapsing hides the rows
+  // without hiding the fact that they exist.
+  const [collapsed, setCollapsed] = React.useState(fullySettled);
+
   if (cycles.length === 0) return null;
+
+  const headingId = `bucket-${bucket}`;
 
   return (
     <section>
-      <div
+      <button
+        type="button"
+        onClick={() => setCollapsed(c => !c)}
+        aria-expanded={!collapsed}
+        aria-controls={`${headingId}-rows`}
         className={cn(
-          'flex items-center gap-2 px-4 py-2.5 border-b',
+          'w-full flex items-center gap-2 px-4 py-2.5 border-b text-left',
+          'hover:brightness-[0.98] transition-[filter] cursor-pointer',
           bucketHeaderStyles[bucket],
         )}
       >
+        {collapsed ? (
+          <FiChevronRight
+            size={15}
+            className="text-chill-text-muted shrink-0"
+            aria-hidden="true"
+          />
+        ) : (
+          <FiChevronDown
+            size={15}
+            className="text-chill-text-muted shrink-0"
+            aria-hidden="true"
+          />
+        )}
         <span className="text-sm font-semibold text-chill-text">
           {BUCKET_LABELS[bucket]}
         </span>
-        {totals.count > 0 && (
+        {owed.length > 0 && (
           <Badge variant={bucket === 'OVERDUE' ? 'coral' : 'default'}>
-            {totals.count}
+            {owed.length}
           </Badge>
         )}
         <span className="ml-auto text-sm text-chill-text-muted tabular-nums">
-          {totals.count > 0 ? formatCurrency(totals.cents) : 'All settled'}
+          {fullySettled
+            ? `${cycles.length} settled · ${formatCurrency(settledCents)}`
+            : formatCurrency(owedCents)}
         </span>
+      </button>
+
+      <div
+        className={cn(
+          'grid transition-[grid-template-rows] duration-300 ease-out',
+          collapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]',
+        )}
+      >
+        <ul id={`${headingId}-rows`} className="overflow-hidden">
+          {cycles.map(cycle => (
+            <CycleRow key={cycle.key} cycle={cycle} onPay={onPay} />
+          ))}
+        </ul>
       </div>
-      <ul>
-        {cycles.map(cycle => (
-          <CycleRow key={cycle.key} cycle={cycle} onPay={onPay} />
-        ))}
-      </ul>
     </section>
   );
 }
@@ -182,28 +221,15 @@ export function OutlookList({
 }) {
   const [payTarget, setPayTarget] = React.useState<BillCycle | null>(null);
 
-  const grouped = React.useMemo(() => {
-    const byBucket = {
+  const byBucket = React.useMemo(() => {
+    const grouped = {
       OVERDUE: [] as BillCycle[],
       DUE_NOW: [] as BillCycle[],
       THIS_MONTH: [] as BillCycle[],
       NEXT_MONTH: [] as BillCycle[],
     } satisfies Record<OutlookBucket, BillCycle[]>;
-    const totals = {
-      OVERDUE: { count: 0, cents: 0 },
-      DUE_NOW: { count: 0, cents: 0 },
-      THIS_MONTH: { count: 0, cents: 0 },
-      NEXT_MONTH: { count: 0, cents: 0 },
-    } satisfies Record<OutlookBucket, OutlookTotals>;
-
-    for (const cycle of cycles) {
-      byBucket[cycle.bucket].push(cycle);
-      if (!cycle.isPaid) {
-        totals[cycle.bucket].count += 1;
-        totals[cycle.bucket].cents += cycle.amountCents;
-      }
-    }
-    return { byBucket, totals };
+    for (const cycle of cycles) grouped[cycle.bucket].push(cycle);
+    return grouped;
   }, [cycles]);
 
   if (cycles.length === 0) {
@@ -216,15 +242,22 @@ export function OutlookList({
 
   return (
     <>
-      {BUCKET_ORDER.map(bucket => (
-        <BucketSection
-          key={bucket}
-          bucket={bucket}
-          cycles={grouped.byBucket[bucket]}
-          totals={grouped.totals[bucket]}
-          onPay={setPayTarget}
-        />
-      ))}
+      {BUCKET_ORDER.map(bucket => {
+        const bucketCycles = byBucket[bucket];
+        // Remount when a section crosses into or out of "nothing left to do",
+        // so its collapsed default is re-applied — paying the last owed bill in
+        // a section folds it away, and a new one springs it back open.
+        const fullySettled =
+          bucketCycles.length > 0 && bucketCycles.every(c => c.isPaid);
+        return (
+          <BucketSection
+            key={`${bucket}:${fullySettled}`}
+            bucket={bucket}
+            cycles={bucketCycles}
+            onPay={setPayTarget}
+          />
+        );
+      })}
 
       {payTarget && (
         <PayCycleDialog

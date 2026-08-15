@@ -78,10 +78,14 @@ export const BUCKET_ORDER: OutlookBucket[] = [
   'NEXT_MONTH',
 ];
 
+/**
+ * `THIS_MONTH` holds both settled cycles and ones not yet at their pay date, so
+ * it can't claim to be "later" — by definition it contains the past.
+ */
 export const BUCKET_LABELS: Record<OutlookBucket, string> = {
   OVERDUE: 'Overdue',
   DUE_NOW: 'Pay now',
-  THIS_MONTH: 'Later this month',
+  THIS_MONTH: 'This month',
   NEXT_MONTH: 'Next month',
 };
 

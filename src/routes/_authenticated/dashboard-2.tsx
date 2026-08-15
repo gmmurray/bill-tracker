@@ -59,6 +59,9 @@ function DashboardPage() {
       ? 0
       : Math.round((monthPaid.length / monthCycles.length) * 100);
 
+  const owedNowCount =
+    outlook.totals.OVERDUE.count + outlook.totals.DUE_NOW.count;
+
   const hasUnassigned = outlook.cycles.some(
     c => c.bill.payScheduleId === null || c.bill.isOrphaned,
   );
@@ -98,25 +101,26 @@ function DashboardPage() {
         </Card>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/*
+            Two cards, not three. Each answers a question the list below can't:
+            what to act on right now, and how far through the month you are.
+            Per-period totals already live in the bucket headers, so an
+            aggregate across the whole horizon only repeated them — and its
+            window ran anywhere from four to nearly nine weeks depending on the
+            date, roughly doubling at each month rollover.
+          */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <StatCard
               label="Owed now"
               value={formatCurrency(
                 outlook.totals.OVERDUE.cents + outlook.totals.DUE_NOW.cents,
               )}
-              detail={`${outlook.totals.OVERDUE.count + outlook.totals.DUE_NOW.count} bill${
-                outlook.totals.OVERDUE.count + outlook.totals.DUE_NOW.count ===
-                1
-                  ? ''
-                  : 's'
-              }`}
+              detail={
+                owedNowCount === 0
+                  ? 'Nothing due'
+                  : `${owedNowCount} bill${owedNowCount === 1 ? '' : 's'}`
+              }
               tone={outlook.totals.OVERDUE.count > 0 ? 'alert' : 'neutral'}
-            />
-            <StatCard
-              label="Owed through next month"
-              value={formatCurrency(outlook.owed.cents)}
-              detail={`${outlook.owed.count} bill${outlook.owed.count === 1 ? '' : 's'}`}
-              tone="neutral"
             />
             <Card className="p-4 flex flex-col justify-between">
               <div className="flex items-baseline justify-between gap-2">
