@@ -135,9 +135,9 @@ function BillRow({
 }) {
   const rowClass =
     state === 'paid'
-      ? 'bg-chill-purple-light'
+      ? 'bg-chill-teal-light/40'
       : state === 'missed'
-        ? 'border-l-4 border-l-amber-500'
+        ? 'border-l-4 border-l-chill-amber'
         : '';
 
   const textClass =

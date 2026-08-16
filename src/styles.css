@@ -109,34 +109,42 @@
 
   /* --- BillChill Color Palette --- */
 
-  /* Base & Surfaces */
-  --color-chill-bg: #fcf6ec; /* Warm cream background */
-  --color-chill-surface: #ffffff; /* Clean white for cards */
+  /*
+   * Neutrals are derived from the cream ground (hue ~35deg), not borrowed from
+   * a cool gray ramp. Blue-leaning grays read dingy on a warm background, and
+   * borders/muted labels appear on every surface in the app — so the one family
+   * that clashed with the background was also the most widely used.
+   */
+  --color-chill-bg: #fcf6ec; /* Warm cream page background */
+  --color-chill-surface: #fffdf9; /* Card surfaces — a touch lighter than the page */
+  --color-chill-text: #2b2622; /* Primary text — warm near-black, 14.7:1 on bg */
+  --color-chill-text-muted: #736858; /* Secondary text — warm taupe, 4.95:1 on bg (AA) */
+  --color-chill-border: #ece4d8; /* Card borders and dividers */
 
-  /* Navigation & Highlights */
-  --color-chill-purple: #d7d0f6; /* Active dashboard button & table rows */
-  --color-chill-purple-light: #efeaff; /* Subtle checklist selections */
+  /*
+   * Accents: one hue family per job. Anything that isn't signalling one of
+   * these four states should use a neutral.
+   */
 
-  /* Critical Overdue Bills */
-  --color-chill-coral: #d97757; /* Terracotta accent for OVERDUE borders/badges */
-  --color-chill-peach: #fbe5d4; /* Soft peach for subtle warning surfaces (nav button active, toast) */
-  --color-chill-peach-border: #f3d2bb; /* Legacy peach border (kept for toast + nav button) */
+  /* Attention — overdue */
+  --color-chill-coral: #d97757; /* Row accents, badges, banner rule */
+  --color-chill-peach: #fbe5d4; /* Overdue surfaces (section header, banner) */
+  --color-chill-peach-border: #f3d2bb;
 
-  /* Chill Score & Good Standing */
-  --color-chill-teal: #71c9c1; /* Chill Score progress & slider thumb */
-  --color-chill-teal-light: #bfebe6; /* Slider track background */
-  --color-chill-mint: #d1ebe0; /* 'Pay' buttons and positive table rows */
-  --color-chill-mint-hover: #bee3d3; /* Hover state for pay buttons */
+  /* Warn — due now (pay date reached, deadline not yet passed) */
+  --color-chill-amber: #c17d1e; /* Row accents and badges */
+  --color-chill-amber-light: #fbeacc; /* Due-now surfaces */
 
-  /* Typography */
-  --color-chill-text: #111827; /* Primary headers and active text */
-  --color-chill-text-muted: #6b7280; /* Secondary info, past dates, unchecked items */
+  /* Settled — paid cycles, progress, affirmative actions */
+  --color-chill-teal: #71c9c1;
+  --color-chill-teal-light: #bfebe6;
 
-  /* Borders */
-  --color-chill-border: #e5e7eb; /* Card borders and dividers */
+  /* Selection & navigation only — never an action color */
+  --color-chill-purple: #d7d0f6; /* Active nav item, selected tab */
+  --color-chill-purple-light: #efeaff; /* Hover states */
 
   /* Wordmark accent */
-  --color-chill-ice: #7ec8e8; /* Icy light blue for "Chill." wordmark */
+  --color-chill-ice: #7ec8e8; /* "Chill." in the logotype */
 
   /* ResponsiveDrawer animations */
   --animate-fade-in: fade-in 0.2s ease;

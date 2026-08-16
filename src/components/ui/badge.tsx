@@ -12,7 +12,7 @@ const variantClasses: Record<BadgeVariant, string> = {
   teal: 'bg-chill-teal-light text-chill-text',
   peach: 'bg-chill-peach border border-chill-peach-border text-chill-text',
   coral: 'bg-transparent border border-chill-coral text-chill-coral',
-  amber: 'bg-transparent border border-amber-500 text-amber-700',
+  amber: 'bg-transparent border border-chill-amber text-chill-amber',
 };
 
 export function Badge({

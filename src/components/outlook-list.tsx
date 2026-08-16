@@ -45,7 +45,7 @@ export function describeTiming(cycle: BillCycle): string {
 
 const statusAccent: Record<BillCycle['status'], string> = {
   OVERDUE: 'border-l-4 border-l-chill-coral',
-  DUE_NOW: 'border-l-4 border-l-amber-500',
+  DUE_NOW: 'border-l-4 border-l-chill-amber',
   SCHEDULED: 'border-l-4 border-l-transparent',
   PAID: 'border-l-4 border-l-transparent',
 };
@@ -93,12 +93,14 @@ export function CycleRow({
         </p>
       </div>
 
+      {/* The amount is the payload of a bill tracker, so it outranks the bill
+          name typographically rather than tying with it. */}
       <span
         className={cn(
-          'text-sm tabular-nums shrink-0',
+          'text-base tabular-nums tracking-tight shrink-0',
           cycle.isPaid
-            ? 'text-chill-text-muted'
-            : 'text-chill-text font-medium',
+            ? 'text-chill-text-muted font-medium'
+            : 'text-chill-text font-semibold',
         )}
       >
         {formatCurrency(cycle.amountCents)}
@@ -106,7 +108,7 @@ export function CycleRow({
 
       <div className="shrink-0 w-24 flex justify-end">
         {cycle.isPaid ? (
-          <Badge variant="default">Paid</Badge>
+          <Badge variant="teal">Paid</Badge>
         ) : (
           <Button variant="pay" size="sm" onClick={() => onPay(cycle)}>
             Mark Paid
@@ -124,7 +126,7 @@ function hasActionable(cycles: BillCycle[]): boolean {
 
 const bucketHeaderStyles: Record<OutlookBucket, string> = {
   OVERDUE: 'bg-chill-peach border-chill-peach-border',
-  DUE_NOW: 'bg-amber-50 border-amber-200',
+  DUE_NOW: 'bg-chill-amber-light border-chill-peach-border',
   THIS_MONTH: 'bg-chill-surface border-chill-border',
   NEXT_MONTH: 'bg-chill-surface border-chill-border',
 };

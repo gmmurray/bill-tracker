@@ -30,7 +30,7 @@ export function OutlookBanner() {
         'px-4 py-3 flex items-center gap-3 border-b border-l-4',
         summary.tone === 'overdue'
           ? 'bg-chill-peach border-chill-peach-border border-l-chill-coral'
-          : 'bg-amber-50 border-amber-200 border-l-amber-500',
+          : 'bg-chill-amber-light border-chill-peach-border border-l-chill-amber',
       )}
     >
       <span className="text-sm text-chill-text flex-1">

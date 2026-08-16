@@ -147,7 +147,7 @@ function RootComponent() {
             description: 'text-chill-text-muted',
             closeButton:
               'bg-chill-surface border-chill-border text-chill-text-muted hover:text-chill-text',
-            success: 'bg-chill-mint border-chill-mint-hover text-chill-text',
+            success: 'bg-chill-teal-light border-chill-teal text-chill-text',
             error: 'bg-chill-peach border-chill-peach-border text-chill-text',
           },
         }}

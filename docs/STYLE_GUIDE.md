@@ -4,29 +4,35 @@
 
 All colors are defined as CSS custom properties in `src/styles.css` and available as Tailwind utilities via the `chill-*` namespace.
 
+### Neutrals
+
+Derived from the cream ground (hue ~35°), **not** from a cool gray ramp. Blue-leaning grays read dingy on a warm background, and borders and muted labels appear on every surface — so a mismatched neutral family is the most visible mistake available.
+
 | Token | Hex | Usage |
 |---|---|---|
-| `chill-bg` | `#fcf6ec` | Page background (warm cream) |
-| `chill-surface` | `#ffffff` | Card / panel backgrounds |
-| `chill-purple` | `#d7d0f6` | Active nav, highlighted table rows |
-| `chill-purple-light` | `#efeaff` | Checked checklist row background |
-| `chill-peach` | `#fbe5d4` | Critical alert / overdue card background |
-| `chill-peach-border` | `#f3d2bb` | Borders on warning elements |
-| `chill-teal` | `#71c9c1` | Donut chart fill, positive indicators |
-| `chill-teal-light` | `#bfebe6` | Donut chart track background |
-| `chill-mint` | `#d1ebe0` | Pay button background |
-| `chill-mint-hover` | `#bee3d3` | Pay button hover state |
-| `chill-text` | `#111827` | Primary text |
-| `chill-text-muted` | `#6b7280` | Secondary text, past dates, labels |
-| `chill-border` | `#e5e7eb` | Card borders, dividers |
-| `chill-ice` | `#7ec8e8` | "Chill." wordmark accent |
+| `chill-bg` | `#fcf6ec` | Page background |
+| `chill-surface` | `#fffdf9` | Cards and panels — a touch lighter than the page |
+| `chill-text` | `#2b2622` | Primary text (14.7:1 on `chill-bg`) |
+| `chill-text-muted` | `#736858` | Secondary text, dates, labels (4.95:1 — AA) |
+| `chill-border` | `#ece4d8` | Card borders, dividers |
 
-### Semantic Usage
+Keep `chill-text-muted` at or darker than this value. It's used at `text-xs`, where AA requires 4.5:1 and there's no headroom left.
 
-- **Overdue / critical:** `chill-peach` background, `chill-peach-border` border
-- **Missed schedule (amber warning):** use Tailwind `amber-*` utilities — not a custom token
-- **Paid / positive:** `chill-mint` (buttons), `chill-teal` (charts)
-- **Active / selected:** `chill-purple-light` background, `chill-purple` accent
+### Accents — one hue family per job
+
+| Role | Tokens | Usage |
+|---|---|---|
+| **Attention** (overdue) | `chill-coral` `#d97757`, `chill-peach` `#fbe5d4`, `chill-peach-border` `#f3d2bb` | Row accent, badges, banner, section header |
+| **Warn** (due now) | `chill-amber` `#c17d1e`, `chill-amber-light` `#fbeacc` | Row accent, badges, banner, section header |
+| **Settled** | `chill-teal` `#71c9c1`, `chill-teal-light` `#bfebe6` | Paid badges, Pay buttons, progress, success toast |
+| **Selection** | `chill-purple` `#d7d0f6`, `chill-purple-light` `#efeaff` | Active nav, selected tab, hover — **never an action** |
+| **Brand** | `chill-ice` `#7ec8e8` | "Chill." in the logotype only |
+
+Anything not signalling one of those four states uses a neutral. If a new element seems to need a fifth accent, it probably needs a neutral or an existing role.
+
+**Purple is not an action colour.** `Mark Paid` was lavender for a while and read as inert — the same weight as a disabled control. Affirmative actions belong to the settled family, so the colour carries the same meaning everywhere it appears.
+
+**Destructive actions** (archive, delete) and **form validation** use Tailwind `red-*` directly. They're a self-contained family that appears only in those contexts, and are deliberately not part of the brand palette.
 
 ---
 
