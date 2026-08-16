@@ -4,10 +4,7 @@ import type { PropsWithChildren, ReactNode } from 'react';
 import * as React from 'react';
 import { FiCalendar, FiFileText, FiGrid, FiMenu } from 'react-icons/fi';
 
-/**
- * `banner` and `navButton` are injected by the shell so the legacy and outlook
- * chrome can coexist while the rebuilt dashboard is evaluated side by side.
- */
+/** Global chrome is injected by the shell, which owns the outlook context. */
 type Props = PropsWithChildren<{
   banner?: ReactNode;
   navButton?: ReactNode;
@@ -100,13 +97,6 @@ function SidebarContents({ onLinkClick }: { onLinkClick?: () => void }) {
           Dashboard
         </NavLink>
         <NavLink
-          to="/dashboard-2"
-          icon={<FiGrid size={16} aria-hidden="true" />}
-          onClick={onLinkClick}
-        >
-          Dashboard v2
-        </NavLink>
-        <NavLink
           to="/bills"
           icon={<FiFileText size={16} aria-hidden="true" />}
           onClick={onLinkClick}
@@ -135,7 +125,7 @@ function NavLink({
   onClick,
   children,
 }: {
-  to: '/dashboard' | '/dashboard-2' | '/bills' | '/schedules';
+  to: '/dashboard' | '/bills' | '/schedules';
   icon: React.ReactNode;
   onClick?: () => void;
   children: React.ReactNode;

@@ -7,226 +7,96 @@
 
 ## Workflow framing
 
-The dashboard is the daily action surface. The user's primary question is *"What do I need to deal with today, and how much have I already taken care of this month?"*
+The dashboard answers two questions and refuses to answer any others by hiding things:
 
-It's an **assembled view** — all data comes from existing queries, all state is derived JIT in memory from the bill blueprints + this month's payment ledger. No new server functions. No persisted dashboard state.
+1. **What can I pay right now?**
+2. **How far through the month am I?**
+
+Its governing constraint is that **nothing is ever filtered out**. Every active bill appears, once per billing cycle in the horizon. Sections group and order; they never drop. A user must be able to confirm that the list is the whole set — that guarantee is the reason the page exists in this form.
+
+All state is derived in memory by `buildBillOutlook` (see [../business-logic.md](../business-logic.md#the-outlook--bill-cycle-derivation)). No new server functions, no persisted dashboard state.
 
 ---
 
 ## Layout
 
-Four full-width rows, top to bottom. Some rows hide entirely when empty.
-
 ### Header
 
-`h1` reads `"Today, {weekday, month day}"` (e.g. `"Today, Wednesday, June 15"`). Anchors the user temporally and makes the JIT state decisions feel less abstract.
+`h1` reads `"Today, {weekday, month day}"`, with the subtitle `"Everything due through the end of next month."` — the subtitle states the horizon so the list's boundaries are explicit rather than inferred.
 
-### Row 1 — Attention Banner
+### Stat cards (two, half-width)
 
-Full width. **Collapses entirely when empty.**
+- **Owed now** — `OVERDUE + DUE_NOW` totals, in dollars and bill count. Reads `"Nothing due"` when clear; this is the page's only persistent all-clear signal, since the banner hides itself when there's nothing to report. Takes `chill-peach` styling when anything is overdue.
+- **Settled this month** — dollars settled, `n/m` cycle count, and a `chill-teal` progress bar over the month's total. Scoped to cycles whose `cycleDueDate` falls in the current calendar month, derived from the same cycle list the sections render.
 
-A single-line banner — not a bill list. The actual list of attention-needing items lives in the global Bill Actions drawer (see [actions.md](actions.md)); this banner just nudges the user toward it.
+There were formerly three cards. An aggregate across the whole horizon was removed: its window ran from roughly four to nearly nine weeks depending on the date, so it roughly doubled at each month rollover with no change in the underlying bills, and it merely re-summed totals already printed in the section headers.
 
-Content: `"{N} bill{s} need your attention"` + a `Review →` button that opens the Bill Actions drawer (sets the root search param `?actions=true`).
+### Schedule tabs
 
-`N` is the count of bills that are `OVERDUE` ∪ `MISSED_SCHEDULE` where the bill's schedule is not the active session.
+`All` (default) plus one tab per active schedule, plus `Unassigned` when any unassigned or orphaned bill exists. Each tab carries a count of owed cycles.
 
-Styling: `bg-chill-peach border border-chill-peach-border` card with the text + button inline. Keep it visually quiet — this is a notification, not a panel.
+Tabs filter the rendered list, but `All` is the default and every tab shows its count, so no tab is load-bearing. Selection lives in the `tab` search param, which is **optional** — `/dashboard` with no params means `All`, keeping the PWA start URL clean.
 
-**Promote to app-wide during this build.** The attention banner shouldn't only live on the dashboard — if the conditions for it are met, the user should see it on any authenticated route. Implementation: hoist the banner into `_authenticated.tsx` (or `AppLayout`) and render it when `attentionCount > 0`. The `BillActionsProvider` already supplies the count app-wide. The dashboard-specific Row 1 slot then becomes "this banner happens to render at the top of the dashboard because it renders at the top of every authenticated route" — no dashboard-specific rendering needed.
+### Sections
 
-### Row 2 — Monthly Snapshots (50% / 50%)
+Four, in urgency order: `Overdue`, `Pay now`, `This month`, `Next month`.
 
-Two side-by-side `<Card>`s. Always rendered, never hides — these are the user's at-a-glance budget pulse for the month.
+Each header shows the label, a count badge of owed cycles, and a total — owed dollars, or `"{n} settled · {amount}"` when nothing is left.
 
-Both metrics are **calendar-month-scoped**: a `bill_instance` "counts toward" the month its `dueDate` falls in (e.g. an instance with `dueDate = 2026-07-01` paid on June 28 is a *July* payment).
+**Sections open by default only when they hold something actionable today.** Since `THIS_MONTH` and `NEXT_MONTH` structurally cannot contain `OVERDUE` or `DUE_NOW` cycles, they always start collapsed; `Overdue` and `Pay now` always start expanded. Collapsing hides rows, never their existence — the count and total stay on the header.
 
-**Left card — Bill count progress:**
+A section re-applies its default when it crosses the actionable boundary, so settling the last actionable row folds it away and a newly-owed cycle springs it open.
 
-- Donut chart: `paidCount / totalActiveBillsThisMonth`
-- Center label: `"{paidCount} / {totalCount}"`, sub-label `"bills paid"`
-- Use `chill-teal` fill on `chill-teal-light` track
+### Row
 
-**Right card — Dollar burndown:**
+Bill name (links to detail, struck through when settled), an auto-pay icon when applicable, a timing line, the amount, and either `Mark Paid` or a `Paid` badge. A left border accent marks `OVERDUE` (coral) and `DUE_NOW` (amber).
 
-- Same donut shape, fill = `paidDollars / expectedDollars`
-- Center label: `formatCurrency(paidDollars)`, sub-label `"of {formatCurrency(expectedDollars)}"`
-- Same color tokens
+The timing line always names the actual cycle date:
 
-`totalActiveBillsThisMonth` is `bills.length` (every active bill has one cycle per month). `expectedDollars` is `sum(amountExpected)` over those bills.
-
-`paidCount` is the number of bills with a current-month instance. `paidDollars` is `sum(amountActual)` over those instances.
-
-### Row 3 — Active Session Checklist
-
-Full width.
-
-Shows **all bills tied to the active pay session's schedule** — paid, unpaid, overdue, missed, all of them. Not just unpaid. Rationale: users want visual confirmation that nothing is missing from their checklist, which only works if the whole set is on screen.
-
-**Selecting the active schedule (earliest unfinished session rule):**
-
-For each active schedule, compute `currentSession`:
-
-- If any bill on the schedule has an unpaid target cycle (see "session-relative payment state" below) → `currentSession` = the most recent past pay date occurrence
-- Else → `currentSession` = the next future pay date occurrence
-
-Active schedule = the one with the earliest `currentSession` date. Ties broken by `payDate` ascending, then `name` ascending.
-
-This rule means: if you're mid-session on schedule A and the next schedule B's pay date has technically arrived, schedule A stays in Row 3 until you finish it. Schedule B's bills wait their turn. Sessions queue up chronologically instead of fragmenting between rows when calendar pay dates pass.
-
-Card header: `"Pay Session — {schedule.name} ({formatOrdinal(schedule.payDate)})"`.
-
-**Session-relative payment state.**
-
-For each bill in the checklist, the "is this paid" question is about the *target cycle for this session*, not the most recent past calendar cycle. Compute per bill:
-
-```
-targetDueDate = computeNearestUnpaidDueDate(bill.dueDayOfMonth, instances, today)
-```
-
-The checkbox is filled iff an instance exists for `targetDueDate`. Since `nearestUnpaidDueDate` returns the first cycle without an instance, the checkbox is effectively always empty until the user pays — at which point a new instance is created for `targetDueDate` and the next call returns the cycle after that.
-
-This makes pay-ahead workflows work: bill due 1st on a schedule with pay date 15th, paying on Feb 15 for the March 1 cycle. The dashboard Pay dialog shows `"Applying to: 2026-03-01"` regardless of where the calendar happens to fall.
-
-**State styling per bill row** (uses calendar-relative state from `deriveBillState` for visual cues only — actionability is session-relative as above):
-
-| Element | Behavior |
+| Status | Text |
 |---|---|
-| Checkbox | Filled iff an instance exists for `targetDueDate`. Clicking an empty box opens the Pay confirmation dialog. Clicking a filled box does nothing (corrections go through bill detail). |
-| Bill name | Click navigates to detail. Strike-through when checkbox is filled. |
-| Day | Ordinal `dueDayOfMonth`, muted. |
-| Amount | `formatCurrency(amountExpected)`. Right-aligned, tabular. |
-| Auto indicator | If `isAutoPay`, render the existing teal check icon next to the amount. Bills still need to be marked paid the same way — auto-pay is purely informational. |
+| `PAID` | `Settled for {due}` |
+| `OVERDUE` | `Due {due} · {n} days late` |
+| `DUE_NOW` / `SCHEDULED` | `Pay date {payBy} · due {due}`, or `Due {due}` when unscheduled |
 
-**Row state styling:**
+Rows deliberately carry **no schedule name**. The pay date conveys which session a bill belongs to, and the tab strip carries schedule identity; re-labelling every row reintroduces the "which session am I in" question this design removes.
 
-- `PAID` → muted text, struck-through name, no row background
-- `UPCOMING` → normal text
-- `MISSED_SCHEDULE` → `bg-amber-50 border-l-2 border-amber-400`
-- `OVERDUE` → `bg-chill-peach border-l-2 border-chill-peach-border` (matches Row 1 alert language so the visual signal carries across)
+### Footer
 
-**Empty states (mutually exclusive):**
-
-- *No active schedules at all* → `"No active pay schedules. Create one to start a pay session."` with a link to `/schedules`
-- *Active schedules exist but every bill on the next-upcoming is `PAID`* → `"All caught up for {schedule.name}!"`
-
-### Row 4 — Upcoming Preview
-
-Full width.
-
-A **preview** of upcoming bills — the first 7 `UPCOMING` bills sorted by `dueDayOfMonth` ascending. Scoped to the current calendar month.
-
-Includes bills assigned to any schedule (including the active one — intentional, this is a reference list), plus unassigned and orphaned bills.
-
-Columns: `Day | Bill | Amount | Pay`. Same Pay button → same confirmation dialog as Row 3. Click bill name navigates to detail.
-
-Footer link: `"See all upcoming →"` opens the Bill Actions drawer (`?actions=true`).
-
-Empty state: hide the preview entirely if there are no upcoming bills this month. The drawer surface handles the empty-app case.
+`"{n} cycles across {m} bills, through {date}."` — a countable claim the user can check against the rows, not a reassurance.
 
 ---
 
-## Pay Confirmation Dialog
+## Pay Cycle Dialog
 
-Shared component used by Row 1, Row 3 (empty-checkbox click), and Row 4.
+`AlertDialog`. Shows the cycle being recorded, the pay date when it differs, and an editable amount prefilled from `amountExpected`.
 
-`AlertDialog` (not a drawer — quick action, no multi-step).
+The dialog records **the cycle from the row that opened it**, passing `dueDate` explicitly to `recordBillPayment`. Nothing is inferred at confirm time. Its predecessor recomputed nearest-unpaid from a bounded client-side ledger and could therefore name a cycle the server would not actually write.
 
-**Body:**
+Conflicts (`UNIQUE(billId, dueDate)`) surface inline; the dialog stays open.
 
-- Header: `"Mark {bill.name} as paid"`
-- Read-only line: `"Applying to: {formatted(nearestUnpaidDueDate)}"` — surfaces what cycle the payment is recording. Per CLAUDE.md, the UI must always display this before confirm.
-- Amount input (`type="number"`, step `0.01`) prefilled with `(amountExpected / 100).toFixed(2)`. Editable — user may have paid more or less.
-
-**Footer:** `Cancel` + `Confirm payment`.
-
-On confirm → `useRecordBillPayment().mutateAsync({ billId, amountActual })`.
-
-**Conflict handling:** if the server returns `ConflictError` (UNIQUE `(billId, dueDate)` violation — race with another device), show the error message inline above the footer. Don't close the dialog. The user can cancel out.
-
-**Editing the applied date is intentionally not supported here.** Users paying for a *different* date (catching up late, paying ahead) go through bill detail's "Log Historical Payment" drawer. Keeps the dashboard dialog single-purpose and fast.
+Paying a cycle outside the horizon still goes through **Log Historical Payment** on the bill detail page.
 
 ---
 
 ## Data Dependencies
 
-All from existing hooks — no new server functions.
+All read through `BillOutlookProvider`, which owns the single derivation shared with the banner and drawer.
 
 | Hook | Purpose |
 |---|---|
 | `useBills({ scheduleId: 'all', manualOnly: false })` | All active bill blueprints |
-| `usePaySchedules()` | Active schedules — used to pick the next-upcoming |
-| `useRecentInstances()` | Payment ledger for the previous + current month — drives state derivation, session-completeness, snapshot metrics |
-| `useRecordBillPayment()` | Pay button confirmation dialog |
+| `usePaySchedules()` | Active schedules — the tab strip |
+| `useRecentInstances()` | Ledger for previous, current, and next month |
+| `useRecordBillPayment()` | Pay dialog |
 
-In-memory derivation:
-
-1. Build `instancesByBillId: Map<string, BillInstance[]>` once
-2. For each schedule, compute its `currentSession` (using the rule in Row 3)
-3. Pick the active schedule by earliest `currentSession`
-4. For each bill, compute calendar-relative state via `deriveBillState(bill, schedule, instances, today)` for visual styling
-5. For bills on the active schedule, compute session-relative `targetDueDate` and a `targetIsPaid` flag
-
-Group bills into:
-
-- `attentionCount` (for Row 1 banner): bills where state is `OVERDUE`, plus bills where state is `MISSED_SCHEDULE` and the bill's schedule is *not* the active schedule. Just a count — the full list lives in the action drawer.
-- `activeChecklist`: bills where `payScheduleId === activeSchedule.id` (all states). Each rendered with calendar-state styling + session-state checkbox.
-- `upcomingPreview`: bills with state `UPCOMING` and `dueDayOfMonth` falling on or after today within the current calendar month, sliced to the first 7.
-
-A bill assigned to the active schedule that is OVERDUE will count toward the Row 1 attention banner *and* appear in Row 3 (with peach row highlight) *and* in the drawer's Needs Attention section. Intentional — the user can act from whichever surface they're looking at.
+The route loader pre-warms all three queries.
 
 ---
 
 ## Today / Midnight Refresh
 
-State derivation depends on `today`. If the user leaves the dashboard open overnight, the derived states go stale.
-
-Implementation: a single `useEffect` in the dashboard root computes ms-until-next-local-midnight, sets a `setTimeout` that bumps a `today` state, then re-schedules. Cleanup clears the timeout on unmount. The `today` value is passed down to all row components.
-
-```tsx
-const [today, setToday] = React.useState(() => new Date());
-React.useEffect(() => {
-  const next = new Date();
-  next.setHours(24, 0, 0, 0);
-  const t = setTimeout(() => setToday(new Date()), next.getTime() - Date.now());
-  return () => clearTimeout(t);
-}, [today]);
-```
-
-The `[today]` dep ensures re-scheduling after each bump.
-
----
-
-## Auto-Pay Treatment
-
-`isAutoPay` is **informational only** on the dashboard. Auto-pay bills:
-
-- Appear in the same lists as manual bills (no `manualOnly: true` filter)
-- Render an "Auto" icon next to the amount (the existing teal check from `bills/index.tsx`)
-- Need a `bill_instance` recorded to be considered `PAID` — same JIT semantics. The user is expected to mark them paid after the auto-charge clears
-
-Treating auto-pay as a separate workflow added complexity without a clear win — payment is payment, the instance ledger is the source of truth.
-
----
-
-## Route Files
-
-- `src/routes/_authenticated/dashboard.tsx` — replace the placeholder; add loader pre-warming the three queries above
-
----
-
-## Loader
-
-```ts
-loader: ({ context }) =>
-  Promise.all([
-    context.queryClient.ensureQueryData(
-      billsQueryOptions({ scheduleId: 'all', manualOnly: false }),
-    ),
-    context.queryClient.ensureQueryData(paySchedulesQueryOptions()),
-    context.queryClient.ensureQueryData(recentInstancesQueryOptions()),
-  ]),
-```
+`BillOutlookProvider` holds `today` in state and schedules a `setTimeout` for the next local midnight, re-scheduling after each bump. Because every surface reads `today` from that one provider, the dashboard, banner, and drawer can't drift apart overnight.
 
 ---
 

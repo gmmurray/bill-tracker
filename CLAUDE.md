@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**bill chill** is a personal bill-tracking app. The database is a lean historical ledger of payments — all bill state is derived on the fly from that ledger plus the bill blueprints. Detailed domain rules live in [docs/business-logic.md](docs/business-logic.md); consult it for state derivation, payment cycle logic, or schedule selection.
+**bill chill** is a personal bill-tracking app. The database is a lean historical ledger of payments — all bill state is derived on the fly from that ledger plus the bill blueprints. Detailed domain rules live in [docs/business-logic.md](docs/business-logic.md); consult it for cycle derivation, payment cycle logic, or pay-by dates.
 
 **Stack:** TanStack React Start (SSR), TanStack Router (file-based), TanStack Query, Clerk auth, Drizzle ORM, Cloudflare D1 (SQLite), Cloudflare Workers, Tailwind CSS v4, Radix UI, Biome, TypeScript strict.
 
@@ -83,11 +83,19 @@ Four primary surfaces:
 
 Feature modules: `auth/`, `bills/`, `pay-schedules/`. Bill instance mutations (`recordBillPayment`, `logHistoricalPayment`, etc.) live under `bills/` — bill instances are not a standalone feature.
 
+`bills/bills-outlook.ts` is the exception to the naming pattern: it's the pure derivation the dashboard, banner, and drawer all share, kept separate from `bills-helpers.ts` because it defines a model (bill-cycles, pay-by dates, buckets) rather than utilities.
+
+### One derivation, no surface-local filters
+
+The dashboard, attention banner, and actions drawer read a single `buildBillOutlook` result via `BillOutlookProvider`. Surfaces group, order, and collapse — they do not filter.
+
+This is a hard rule, not a preference. These surfaces previously each ran their own predicate over the bill list, the predicates disagreed, and bills became invisible on every surface at once. If a new surface seems to need its own filter, add it to the outlook derivation with a test instead.
+
 ---
 
 ## Reference Docs
 
-- **[docs/business-logic.md](docs/business-logic.md)** — domain rules (JIT, state derivation, nearest-unpaid, active schedule selection, auto-pay, orphans, double-payment, multi-device)
+- **[docs/business-logic.md](docs/business-logic.md)** — domain rules (JIT, bill-cycle derivation, nearest-unpaid, ledger fetch window, auto-pay, orphans, double-payment, multi-device)
 - **[docs/pages/dashboard.md](docs/pages/dashboard.md)** — dashboard spec
 - **[docs/pages/actions.md](docs/pages/actions.md)** — global Bill Actions drawer spec
 - **[docs/pages/schedules.md](docs/pages/schedules.md)** — schedules pages spec

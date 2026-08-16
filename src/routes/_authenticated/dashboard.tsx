@@ -1,37 +1,28 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import * as React from 'react';
-import { FiChevronDown, FiChevronUp } from 'react-icons/fi';
-import { useBillActionsState } from '#/components/bill-actions-drawer';
-import { PayBillDialog } from '#/components/pay-bill-dialog';
-import { Badge } from '#/components/ui/badge';
-import { Button } from '#/components/ui/button';
-import { Card, CardBody, CardHeader } from '#/components/ui/card';
+import { z } from 'zod';
+import { useBillOutlook } from '#/components/bill-outlook-provider';
+import { OutlookList } from '#/components/outlook-list';
+import { Card } from '#/components/ui/card';
+import { formatCurrency, formatOrdinal } from '#/features/bills/bills-helpers';
 import {
-  clampDayToMonth,
-  computeMonthDonutMetrics,
-  deriveBillState,
-  formatCurrency,
-  formatDueLabel,
-  formatOrdinal,
-  selectActiveSchedule,
-} from '#/features/bills/bills-helpers';
-import type {
-  Bill,
-  BillInstance,
-  BillWithSchedule,
-} from '#/features/bills/bills-model';
+  type BillCycle,
+  filterCyclesBySchedule,
+} from '#/features/bills/bills-outlook';
 import {
   billsQueryOptions,
   recentInstancesQueryOptions,
-  useBills,
 } from '#/features/bills/bills-queries';
-import {
-  paySchedulesQueryOptions,
-  usePaySchedules,
-} from '#/features/pay-schedules/pay-schedules-queries';
+import { paySchedulesQueryOptions } from '#/features/pay-schedules/pay-schedules-queries';
 import { cn } from '#/lib/utils';
 
+// Optional so `/dashboard` needs no search params — it's the PWA start URL and
+// the target of every nav link. Absent means the default "All" tab.
+const searchSchema = z.object({
+  tab: z.string().optional().catch('all'),
+});
+
 export const Route = createFileRoute('/_authenticated/dashboard')({
+  validateSearch: searchSchema,
   head: () => ({
     meta: [{ title: 'Dashboard · BillChill' }],
   }),
@@ -46,105 +37,60 @@ export const Route = createFileRoute('/_authenticated/dashboard')({
   component: DashboardPage,
 });
 
-type SelectedBill = {
-  bill: Pick<
-    Bill,
-    'id' | 'name' | 'dueDayOfMonth' | 'amountExpected' | 'createdAt'
-  >;
-  instances: BillInstance[];
-};
-
 function DashboardPage() {
-  const navigate = useNavigate();
-  const { today, instancesByBillId } = useBillActionsState();
-  const billsQuery = useBills({ scheduleId: 'all', manualOnly: false });
-  const schedulesQuery = usePaySchedules();
+  const { tab = 'all' } = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
+  const { today, outlook, schedules, bills } = useBillOutlook();
 
-  const bills = billsQuery.data ?? [];
-  const schedules = schedulesQuery.data ?? [];
+  const visibleCycles = filterCyclesBySchedule(outlook.cycles, tab);
 
-  const [selectedBill, setSelectedBill] = React.useState<SelectedBill | null>(
-    null,
+  // Month progress, derived from the same cycles the list renders — so the
+  // number at the top always accounts for exactly the rows below it.
+  const monthPrefix = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-`;
+  const monthCycles = outlook.cycles.filter(c =>
+    c.cycleDueDate.startsWith(monthPrefix),
   );
-  const [isSessionCollapsed, setIsSessionCollapsed] = React.useState(false);
-
-  const todayYear = today.getFullYear();
-  const todayMonth = today.getMonth() + 1;
-  const todayDay = today.getDate();
-
-  // Row 2 metrics — calendar-month-scoped. See `computeMonthDonutMetrics` for
-  // the relevance rule (skip-PAID bills are excluded from both totals so newly
-  // added bills don't drag the donut backwards).
-  const { paidCount, totalCount, paidCents, totalCents } =
-    computeMonthDonutMetrics(bills, schedules, instancesByBillId, today);
-
-  // Row 3 — active session
-  const activeSchedule = selectActiveSchedule(
-    schedules,
-    bills,
-    instancesByBillId,
-    today,
+  const monthPaid = monthCycles.filter(c => c.isPaid);
+  const monthPaidCents = monthPaid.reduce((sum, c) => sum + c.amountCents, 0);
+  const monthTotalCents = monthCycles.reduce(
+    (sum, c) => sum + c.amountCents,
+    0,
   );
-  const activeScheduleEntries = activeSchedule
-    ? bills
-        .filter(b => b.payScheduleId === activeSchedule.id)
-        .map(bill => {
-          const instances = instancesByBillId.get(bill.id) ?? [];
-          const state = deriveBillState(bill, activeSchedule, instances, today);
-          return { bill, state, isPaid: state === 'PAID' };
-        })
-        .sort((a, b) => {
-          if (a.isPaid !== b.isPaid) return a.isPaid ? 1 : -1;
-          return a.bill.dueDayOfMonth - b.bill.dueDayOfMonth;
-        })
-    : [];
-  const allChecklistPaid = activeScheduleEntries.every(e => e.isPaid);
+  const monthPct =
+    monthCycles.length === 0
+      ? 0
+      : Math.round((monthPaid.length / monthCycles.length) * 100);
 
-  // Row 4 — upcoming preview (this-month bills due on/after today, paid or not).
-  // Excludes bills already shown in Row 3's active session checklist; if there
-  // is no active schedule, no exclusion applies so Row 4 still covers everything.
-  const upcomingPreview = bills
-    .map(bill => {
-      const schedule = schedules.find(s => s.id === bill.payScheduleId) ?? null;
-      const instances = instancesByBillId.get(bill.id) ?? [];
-      const state = deriveBillState(bill, schedule, instances, today);
-      return { bill, state, isPaid: state === 'PAID' };
-    })
-    .filter(({ bill }) => {
-      if (activeSchedule && bill.payScheduleId === activeSchedule.id) {
-        return false;
-      }
-      const clamped = clampDayToMonth(
-        bill.dueDayOfMonth,
-        todayYear,
-        todayMonth,
-      );
-      return clamped >= todayDay;
-    })
-    .sort((a, b) => a.bill.dueDayOfMonth - b.bill.dueDayOfMonth)
-    .slice(0, 7);
+  const owedNowCount =
+    outlook.totals.OVERDUE.count + outlook.totals.DUE_NOW.count;
 
-  function openPayDialog(
-    bill: Pick<
-      Bill,
-      'id' | 'name' | 'dueDayOfMonth' | 'amountExpected' | 'createdAt'
-    >,
-  ) {
-    setSelectedBill({ bill, instances: instancesByBillId.get(bill.id) ?? [] });
-  }
+  const hasUnassigned = outlook.cycles.some(
+    c => c.bill.payScheduleId === null || c.bill.isOrphaned,
+  );
 
-  const hasActiveSchedules = schedules.some(s => s.isActive);
+  const tabs: Array<{ id: string; label: string }> = [
+    { id: 'all', label: 'All' },
+    ...schedules.map(s => ({
+      id: s.id,
+      label: `${s.name} (${formatOrdinal(s.payDate)})`,
+    })),
+    ...(hasUnassigned ? [{ id: 'unassigned', label: 'Unassigned' }] : []),
+  ];
 
   return (
-    <div className="px-6 py-8 max-w-5xl mx-auto space-y-6">
-      <h1 className="text-2xl font-semibold text-chill-text">
-        {`Today, ${today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`}
-      </h1>
+    <div className="px-6 py-8 max-w-4xl mx-auto space-y-5">
+      <div>
+        <h1 className="text-2xl font-semibold text-chill-text">
+          {`Today, ${today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`}
+        </h1>
+        <p className="text-sm text-chill-text-muted mt-1">
+          Everything due through the end of next month.
+        </p>
+      </div>
 
-      {/* Row 2 — Monthly Snapshots */}
       {bills.length === 0 ? (
         <Card>
-          <CardBody className="px-6 py-8 text-sm text-chill-text-muted text-center">
+          <div className="px-6 py-12 text-sm text-chill-text-muted text-center">
             No bills yet.{' '}
             <Link
               to="/bills"
@@ -153,358 +99,192 @@ function DashboardPage() {
             >
               Add your first bill →
             </Link>
-          </CardBody>
+          </div>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="p-6">
-            <Donut
-              value={paidCount}
-              total={totalCount}
-              periodLabel="This month"
-              formatValue={v => `${Math.round(v)} / ${totalCount}`}
-              formatDelta={d => `+${Math.round(d)}`}
-              subLabel="bills paid"
-              variant="teal"
-            />
-          </Card>
-          <Card className="p-6">
-            <Donut
-              value={paidCents}
-              total={totalCents}
-              periodLabel="This month"
-              formatValue={v => formatCurrency(Math.round(v))}
-              formatDelta={d => `+${formatCurrency(Math.round(d))}`}
-              subLabel={`of ${formatCurrency(totalCents)}`}
-              variant="purple"
-            />
-          </Card>
-        </div>
-      )}
-
-      {/* Row 3 — Active Session Checklist */}
-      {!hasActiveSchedules || !activeSchedule ? (
-        <Card>
-          <CardBody className="px-6 py-8 text-sm text-chill-text-muted text-center">
-            No active pay schedules.{' '}
-            <Link to="/schedules" className="text-chill-teal hover:underline">
-              Create one →
-            </Link>
-          </CardBody>
-        </Card>
-      ) : activeScheduleEntries.length === 0 ? (
-        <Card>
-          <CardBody className="px-6 py-8 text-sm text-chill-text-muted text-center">
-            No bills assigned to {activeSchedule.name}.{' '}
-            <Link
-              to="/bills"
-              search={{ scheduleId: 'all', manualOnly: false, actions: false }}
-              className="text-chill-teal hover:underline"
-            >
-              Assign bills →
-            </Link>
-          </CardBody>
-        </Card>
-      ) : allChecklistPaid ? (
-        <Card>
-          <CardBody className="px-6 py-8 text-sm text-chill-text-muted text-center">
-            All caught up for {activeSchedule.name}!
-          </CardBody>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader className={isSessionCollapsed ? 'border-b-0' : ''}>
-            <span className="text-sm font-semibold text-chill-text">
-              Pay Session — {activeSchedule.name} (
-              {formatOrdinal(activeSchedule.payDate)})
-            </span>
-            <button
-              type="button"
-              onClick={() => setIsSessionCollapsed(c => !c)}
-              aria-label={
-                isSessionCollapsed ? 'Expand session' : 'Collapse session'
-              }
-              aria-expanded={!isSessionCollapsed}
-              className="rounded p-1 text-chill-text-muted hover:bg-chill-purple-light hover:text-chill-text transition-colors"
-            >
-              {isSessionCollapsed ? (
-                <FiChevronDown size={18} aria-hidden="true" />
-              ) : (
-                <FiChevronUp size={18} aria-hidden="true" />
+        <>
+          {/*
+            Two cards, not three. Each answers a question the list below can't:
+            what to act on right now, and how far through the month you are.
+            Per-period totals already live in the bucket headers, so an
+            aggregate across the whole horizon only repeated them — and its
+            window ran anywhere from four to nearly nine weeks depending on the
+            date, roughly doubling at each month rollover.
+          */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <StatCard
+              label="Owed now"
+              value={formatCurrency(
+                outlook.totals.OVERDUE.cents + outlook.totals.DUE_NOW.cents,
               )}
-            </button>
-          </CardHeader>
-          <div
-            className={cn(
-              'grid transition-[grid-template-rows] duration-300 ease-out',
-              isSessionCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]',
-            )}
-          >
-            <ul className="overflow-hidden">
-              {activeScheduleEntries.map(({ bill, state, isPaid }) => (
-                <BillRow
-                  key={bill.id}
-                  bill={bill}
-                  state={state}
-                  isPaid={isPaid}
-                  showStateBackground
-                  onPay={() => openPayDialog(bill)}
+              detail={
+                owedNowCount === 0
+                  ? 'Nothing due'
+                  : `${owedNowCount} bill${owedNowCount === 1 ? '' : 's'}`
+              }
+              tone={outlook.totals.OVERDUE.count > 0 ? 'alert' : 'neutral'}
+            />
+            <Card className="p-4 flex flex-col justify-between">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-xs text-chill-text-muted">
+                  Settled this month
+                </span>
+                <span className="text-xs text-chill-text-muted tabular-nums">
+                  {monthPaid.length}/{monthCycles.length}
+                </span>
+              </div>
+              <div className="text-lg font-semibold text-chill-text tabular-nums mt-1">
+                {formatCurrency(monthPaidCents)}
+              </div>
+              <div
+                className="h-1.5 rounded-full bg-chill-teal-light mt-2 overflow-hidden"
+                role="progressbar"
+                aria-valuenow={monthPct}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="Bills settled this month"
+              >
+                <div
+                  className="h-full bg-chill-teal rounded-full transition-[width] duration-500"
+                  style={{ width: `${monthPct}%` }}
+                />
+              </div>
+              <span className="text-xs text-chill-text-muted tabular-nums mt-1.5">
+                of {formatCurrency(monthTotalCents)}
+              </span>
+            </Card>
+          </div>
+
+          {tabs.length > 1 && (
+            <div
+              className="flex items-center gap-1.5 overflow-x-auto pb-1"
+              role="tablist"
+              aria-label="Filter by pay schedule"
+            >
+              {tabs.map(t => (
+                <TabButton
+                  key={t.id}
+                  label={t.label}
+                  owed={
+                    filterCyclesBySchedule(outlook.cycles, t.id).filter(
+                      c => !c.isPaid,
+                    ).length
+                  }
+                  selected={t.id === tab}
+                  onSelect={() =>
+                    navigate({ search: prev => ({ ...prev, tab: t.id }) })
+                  }
                 />
               ))}
-            </ul>
-          </div>
-        </Card>
-      )}
+            </div>
+          )}
 
-      {/* Row 4 — Upcoming Preview */}
-      {upcomingPreview.length > 0 && (
-        <Card>
-          <CardHeader>
-            <span className="text-sm font-semibold text-chill-text">
-              Upcoming this month
-            </span>
-          </CardHeader>
-          <ul>
-            {upcomingPreview.map(({ bill, state, isPaid }) => (
-              <BillRow
-                key={bill.id}
-                bill={bill}
-                state={state}
-                isPaid={isPaid}
-                onPay={() => openPayDialog(bill)}
-              />
-            ))}
-          </ul>
-          <div className="px-6 py-3 border-t border-chill-border">
-            <button
-              type="button"
-              onClick={() =>
-                navigate({
-                  search: prev => ({ ...prev, actions: true }),
-                  to: '.',
-                })
+          <Card>
+            <OutlookList
+              cycles={visibleCycles}
+              emptyMessage={
+                tab === 'all'
+                  ? 'No bills scheduled through next month.'
+                  : 'No bills on this schedule through next month.'
               }
-              className="text-sm text-chill-text-muted hover:text-chill-text transition-colors"
-            >
-              See all upcoming →
-            </button>
-          </div>
-        </Card>
-      )}
+            />
+          </Card>
 
-      {selectedBill && (
-        <PayBillDialog
-          bill={selectedBill.bill}
-          instances={selectedBill.instances}
-          open={true}
-          onOpenChange={open => {
-            if (!open) setSelectedBill(null);
-          }}
-        />
+          <OutlookFooter cycles={visibleCycles} today={today} />
+        </>
       )}
     </div>
   );
 }
 
-const donutColors = {
-  teal: {
-    track: 'var(--color-chill-teal-light)',
-    fill: 'var(--color-chill-teal)',
-  },
-  purple: {
-    track: 'var(--color-chill-purple-light)',
-    fill: 'var(--color-chill-purple)',
-  },
-} as const;
-
-function Donut({
+function StatCard({
+  label,
   value,
-  total,
-  periodLabel,
-  formatValue,
-  formatDelta,
-  subLabel,
-  variant,
+  detail,
+  tone,
 }: {
-  value: number;
-  total: number;
-  periodLabel: string;
-  formatValue: (v: number) => string;
-  formatDelta?: (delta: number) => string;
-  subLabel: string;
-  variant: keyof typeof donutColors;
-}) {
-  const [displayValue, setDisplayValue] = React.useState(value);
-  const displayValueRef = React.useRef(value);
-  const prevValueRef = React.useRef(value);
-  const [floater, setFloater] = React.useState<{
-    text: string;
-    key: number;
-  } | null>(null);
-  const [pulseKey, setPulseKey] = React.useState(0);
-  const formatDeltaRef = React.useRef(formatDelta);
-  formatDeltaRef.current = formatDelta;
-
-  React.useEffect(() => {
-    const start = displayValueRef.current;
-    const end = value;
-    if (start === end) return;
-
-    const logicalDelta = end - prevValueRef.current;
-    const isCompleting =
-      total > 0 && prevValueRef.current < total && end >= total;
-    prevValueRef.current = end;
-
-    let floaterTimeoutId: ReturnType<typeof setTimeout> | undefined;
-    if (logicalDelta > 0) {
-      const text = isCompleting
-        ? 'Done!'
-        : (formatDeltaRef.current?.(logicalDelta) ?? null);
-      if (text !== null) {
-        setFloater({ text, key: Date.now() });
-        floaterTimeoutId = setTimeout(() => setFloater(null), 900);
-      }
-      setPulseKey(k => k + 1);
-    }
-
-    let rafId: number | undefined;
-    const duration = 700;
-    const startTime = performance.now();
-
-    function tick(now: number) {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - (1 - progress) ** 3;
-      const current = start + (end - start) * eased;
-      displayValueRef.current = current;
-      setDisplayValue(current);
-      if (progress < 1) {
-        rafId = requestAnimationFrame(tick);
-      } else {
-        displayValueRef.current = end;
-        setDisplayValue(end);
-      }
-    }
-
-    rafId = requestAnimationFrame(tick);
-
-    return () => {
-      if (rafId !== undefined) cancelAnimationFrame(rafId);
-      if (floaterTimeoutId !== undefined) clearTimeout(floaterTimeoutId);
-    };
-  }, [value, total]);
-
-  const radius = 42;
-  const circumference = 2 * Math.PI * radius;
-  const fraction = total > 0 ? displayValue / total : 0;
-  const safeFraction = Math.max(0, Math.min(1, fraction));
-  const dash = safeFraction * circumference;
-  const colors = donutColors[variant];
-
-  return (
-    <div className="flex flex-col items-center gap-3">
-      <span className="text-xs text-chill-text-muted">{periodLabel}</span>
-      <div className="relative">
-        <div
-          key={pulseKey}
-          className={pulseKey > 0 ? 'animate-donut-pulse' : ''}
-        >
-          <svg viewBox="0 0 100 100" className="w-32 h-32 -rotate-90">
-            <circle
-              cx="50"
-              cy="50"
-              r={radius}
-              fill="none"
-              stroke={colors.track}
-              strokeWidth="10"
-            />
-            <circle
-              cx="50"
-              cy="50"
-              r={radius}
-              fill="none"
-              stroke={colors.fill}
-              strokeWidth="10"
-              strokeDasharray={`${dash} ${circumference - dash}`}
-              strokeLinecap="round"
-            />
-          </svg>
-        </div>
-        {floater && (
-          <span
-            key={floater.key}
-            aria-hidden="true"
-            style={{ color: colors.fill }}
-            className="absolute left-1/2 top-1/2 text-sm font-semibold pointer-events-none animate-donut-float-up tabular-nums"
-          >
-            {floater.text}
-          </span>
-        )}
-      </div>
-      <div className="text-center">
-        <div className="text-lg font-semibold text-chill-text tabular-nums">
-          {formatValue(displayValue)}
-        </div>
-        <div className="text-xs text-chill-text-muted">{subLabel}</div>
-      </div>
-    </div>
-  );
-}
-
-function BillRow({
-  bill,
-  state,
-  isPaid,
-  showStateBackground = false,
-  onPay,
-}: {
-  bill: BillWithSchedule;
-  state: ReturnType<typeof deriveBillState>;
-  isPaid: boolean;
-  showStateBackground?: boolean;
-  onPay: () => void;
+  label: string;
+  value: string;
+  detail: string;
+  tone: 'alert' | 'neutral';
 }) {
   return (
-    <li
+    <Card
       className={cn(
-        'flex items-center gap-3 px-4 py-3 border-b border-chill-border last:border-0',
-        showStateBackground &&
-          state === 'MISSED_SCHEDULE' &&
-          'border-l-4 border-l-amber-500',
-        showStateBackground &&
-          state === 'OVERDUE' &&
-          'border-l-4 border-l-chill-coral',
+        'p-4 flex flex-col justify-between',
+        tone === 'alert' && 'bg-chill-peach border-chill-peach-border',
       )}
     >
-      <div className="flex-1 min-w-0">
-        <Link
-          to="/bills/$billId"
-          params={{ billId: bill.id }}
-          search={{ edit: false, page: 1 }}
-          className={cn(
-            'text-sm font-medium truncate block',
-            isPaid
-              ? 'line-through text-chill-text-muted hover:[text-decoration-line:underline_line-through]'
-              : 'text-chill-text hover:underline',
-          )}
-        >
-          {bill.name}
-        </Link>
-        <p className="text-xs text-chill-text-muted tabular-nums">
-          {formatCurrency(bill.amountExpected)} &middot;{' '}
-          {formatDueLabel(bill.dueDayOfMonth)}
-        </p>
-      </div>
+      <span className="text-xs text-chill-text-muted">{label}</span>
+      <span className="text-lg font-semibold text-chill-text tabular-nums mt-1">
+        {value}
+      </span>
+      <span className="text-xs text-chill-text-muted mt-1.5">{detail}</span>
+    </Card>
+  );
+}
 
-      {bill.isAutoPay && <Badge variant="teal">Auto</Badge>}
-
-      {isPaid ? (
-        <Badge variant="default">Paid</Badge>
-      ) : (
-        <Button variant="pay" size="sm" onClick={onPay}>
-          Mark Paid
-        </Button>
+function TabButton({
+  label,
+  owed,
+  selected,
+  onSelect,
+}: {
+  label: string;
+  owed: number;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={selected}
+      onClick={onSelect}
+      className={cn(
+        'shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
+        selected
+          ? 'bg-chill-purple text-chill-text'
+          : 'text-chill-text-muted hover:bg-chill-purple-light',
       )}
-    </li>
+    >
+      {label}
+      {owed > 0 && (
+        <span className="ml-1.5 tabular-nums text-chill-text-muted">
+          {owed}
+        </span>
+      )}
+    </button>
+  );
+}
+
+/**
+ * A countable footer, not a reassurance.
+ *
+ * It states exactly what the list contains and how far it reaches, so the user
+ * can check the claim against the rows rather than take it on faith.
+ */
+function OutlookFooter({
+  cycles,
+  today,
+}: {
+  cycles: BillCycle[];
+  today: Date;
+}) {
+  const billCount = new Set(cycles.map(c => c.bill.id)).size;
+  if (billCount === 0) return null;
+
+  const horizonEnd = new Date(today.getFullYear(), today.getMonth() + 2, 0);
+
+  return (
+    <p className="text-xs text-chill-text-muted text-center">
+      {cycles.length} cycle{cycles.length === 1 ? '' : 's'} across {billCount}{' '}
+      bill{billCount === 1 ? '' : 's'}, through{' '}
+      {horizonEnd.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+      })}
+      .
+    </p>
   );
 }

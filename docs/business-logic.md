@@ -17,7 +17,7 @@ A bill's current state is *always* derived in memory from:
 3. The historical payment ledger for this bill
 4. `today`
 
-When a new calendar month begins, the "reset" happens implicitly: there's no instance for the new month's cycle yet, so the bill derives to `UPCOMING` (or `OVERDUE` / `MISSED_SCHEDULE` once the relevant date passes).
+When a new calendar month begins, the "reset" happens implicitly: there's no instance for the new month's cycle yet, so that cycle derives to `SCHEDULED` (then `DUE_NOW` / `OVERDUE` once the relevant date passes).
 
 This is the central thesis of the app. Don't add stored state flags for cycles, pending payments, or "current period" — the ledger is the source of truth.
 
@@ -38,7 +38,9 @@ When the user marks a bill as paid, the system computes which cycle the payment 
 
 **Implementation:** `computeNearestUnpaidDueDate(dueDayOfMonth, instances, today, createdAt?)` in [src/features/bills/bills-helpers.ts](src/features/bills/bills-helpers.ts). `createdAt` is optional only for legacy call sites; production callers (state derivation, payment recording, Pay dialog) always pass it.
 
-**UI contract:** any UI that triggers a payment must display which `dueDate` the payment is being applied to *before* the user confirms. The Pay confirmation dialog (dashboard, action panel) shows `"Applying to: {formattedDueDate}"`. Skipping this contract risks the user paying for a cycle they didn't intend.
+**UI contract:** any UI that triggers a payment must display which `dueDate` the payment is being applied to *before* the user confirms. Skipping this contract risks the user paying for a cycle they didn't intend.
+
+**Prefer naming the cycle over inferring it.** `recordBillPayment` accepts an explicit `dueDate` and validates it against `assertCanonicalCycle`; nearest-unpaid is only the fallback when the caller omits it. The dashboard and drawer render one row per cycle, so the row the user clicked *is* the cycle recorded. Inference is a liability here: the client derives from a bounded ledger window while the server reads the whole table, so the two can disagree about which cycle is next.
 
 ---
 
@@ -56,7 +58,7 @@ Catch-up takes precedence: while any unpaid in-range cycle exists, extend mode i
 
 If the bill has no instances and no eligible in-range cycles (only possible for a bill created in the future, which the UI doesn't allow), the drawer disables submission.
 
-**Why constrain it:** free-form `dueDate` entry let users save instances whose `dueDate` didn't match any cycle the derivation walk asks about. Those instances are invisible to state derivation — the bill stays `MISSED_SCHEDULE` / `OVERDUE` forever despite the recorded payment, and they show up as orphaned rows in the ledger UI.
+**Why constrain it:** free-form `dueDate` entry let users save instances whose `dueDate` didn't match any cycle the derivation asks about. Those instances are invisible to derivation — the cycle stays `OVERDUE` forever despite the recorded payment, and they show up as orphaned rows in the ledger UI. `assertCanonicalCycle` enforces the same constraint server-side for any caller that names a cycle explicitly.
 
 **Implementations:** `computeEligibleHistoricalCycles` and `computeExtendedHistoricalCycle` in [src/features/bills/bills-helpers.ts](src/features/bills/bills-helpers.ts). Tests in [src/features/bills/bills-helpers.test.ts](src/features/bills/bills-helpers.test.ts).
 
@@ -72,38 +74,45 @@ The rule applies anywhere you compare a stored day-of-month against the calendar
 
 ---
 
-## Bill State Derivation
+## The Outlook — Bill-Cycle Derivation
 
-Each bill is in exactly one of four computed states at any moment, computed by `deriveBillState(bill, schedule, instances, today)`.
+The unit of derived state is a **bill-cycle**, not a bill. A bill contributes one entry per billing cycle inside the horizon, so a bill settled for August and owed for September is represented as *both*, rather than collapsing into a single ambiguous "paid".
 
-| State | Condition |
+For each bill, independently — there is no global selection step:
+
+```
+cycleDueDate — a calendar occurrence of dueDayOfMonth (clamped per the date-math rule)
+payByDate    — the latest occurrence of the bill's schedule payDate at or before
+               cycleDueDate; equal to cycleDueDate when the bill has no active schedule
+status       — today compared against those two dates
+```
+
+**Horizon:** the current month's occurrence and the next month's. Cycles predating `bill.createdAt` are skipped, mirroring the guard in [Nearest Unpaid Date Logic](#nearest-unpaid-date-logic).
+
+| Status | Condition |
 |---|---|
-| `PAID` | The nearest unpaid date is in a future month relative to `today` (i.e., every cycle through this month is on the ledger) |
-| `OVERDUE` | Unpaid for the current cycle, and `today.getDate() > clampDayToMonth(dueDayOfMonth)` |
-| `MISSED_SCHEDULE` | Unpaid, bill is on an active schedule, and `today.getDate() > clampDayToMonth(payDate)` while still `<= clampDayToMonth(dueDayOfMonth)` |
-| `UPCOMING` | None of the above — unpaid and neither pay date nor due day has passed |
+| `PAID` | An instance exists for this `cycleDueDate` |
+| `OVERDUE` | Unpaid and `today > cycleDueDate` |
+| `DUE_NOW` | Unpaid and `payByDate <= today <= cycleDueDate` |
+| `SCHEDULED` | Unpaid and `today < payByDate` |
 
-**`MISSED_SCHEDULE` semantics:** signals "the user's planned pay session passed but the bill isn't technically late yet." It only fires when `payDate < dueDayOfMonth` (pay-ahead schedules). If `payDate == dueDayOfMonth`, the state goes straight `UPCOMING → OVERDUE` with no intermediate window — intentional, not a bug. `OVERDUE` is the meaningful label when pay date and due day coincide.
+`DUE_NOW` is the state formerly called `MISSED_SCHEDULE`. Same condition, actionable framing: the pay date has arrived, the vendor deadline has not. When `payDate == dueDayOfMonth` the status goes straight `SCHEDULED → OVERDUE` with a single-day `DUE_NOW` window on the due date itself.
 
-**State derivation is calendar-relative.** It answers "where does this bill stand on today's calendar." The dashboard's active session checklist uses a different — session-relative — question for actionability (see [docs/pages/dashboard.md](docs/pages/dashboard.md)).
+**Orphaned bills derive as unscheduled** — an archived schedule contributes no `payDate`, so `payByDate` falls back to `cycleDueDate`.
 
----
+**Buckets.** Cycles group into `OVERDUE`, `DUE_NOW`, `THIS_MONTH`, `NEXT_MONTH`. The first two are defined by status; the last two by the calendar month of `cycleDueDate`. Consequently `THIS_MONTH` and `NEXT_MONTH` only ever hold `SCHEDULED` and `PAID` cycles — **nothing in them is actionable today**, which is what lets the UI collapse them by default without hiding anything actionable.
 
-## Active Schedule Selection (Earliest Unfinished Session)
+**Nothing is filtered.** `buildBillOutlook` emits every in-horizon cycle of every active bill. Surfaces group and order; they never drop. This is the property the model exists to guarantee.
 
-The dashboard and Bill Actions drawer both need to identify which schedule represents the user's *current pay session*. Rule:
+### Why there is no "active schedule"
 
-For each active schedule, compute `currentSession`:
-- If any bill on the schedule has an unpaid target cycle → `currentSession` = the most recent past pay date occurrence
-- Else → `currentSession` = the next future pay date occurrence
+An earlier model picked one winning schedule (the earliest unfinished pay session) and scoped the dashboard to it. It was removed because the selection was load-bearing in ways that silently lost data:
 
-**Active schedule** = the schedule with the earliest `currentSession` date. Ties broken by `payDate` ascending, then `name` ascending.
+- A bill overdue on a *non-winning* schedule appeared on no surface at all.
+- Session completeness asked whether an instance existed at a session-relative target cycle. Once that cycle was in the past, `computeNearestUnpaidDueDate` — which never walks backward — could not produce it, so **Mark Paid could never complete the session** and the schedule held the slot indefinitely, masking every other schedule.
+- Session-relative and calendar-relative notions of "paid" disagreed, so a fully-owed pay-ahead session could render as "All caught up".
 
-This rule means a schedule with unfinished work *stays* the active one even after the calendar moves past its pay date. Sessions queue chronologically; they don't fragment between rows when calendar pay dates pass.
-
-**Session-completeness respects `bill.createdAt`.** When deciding whether a bill is "unpaid work" for a given session, targets whose `dueDate` predates the bill's `createdAt` are treated as satisfied — the bill didn't exist for that cycle, so it isn't owed for it. Without this guard, adding a bill mid-month causes the *previous* pay session to appear unfinished and hold the schedule active indefinitely. This mirrors the same guard in [Nearest Unpaid Date Logic](#nearest-unpaid-date-logic).
-
-A bill on a schedule where the cycle paid in this session may differ from this calendar month — e.g., a bill due the 1st paid on a 15th-pay-date schedule pays for *next* month's 1st. The session's target dueDate is `computeNearestUnpaidDueDate(bill, instances, today)` per bill, which may resolve to a future month.
+Per-bill `payByDate` has no selection step, so none of these failure modes have anywhere to live. Schedules are a grouping and labelling device in the UI (tab strip), never a gate.
 
 ---
 
@@ -121,7 +130,7 @@ The user is expected to mark auto-pay bills paid after the charge clears. The al
 
 ## Orphaned Bills
 
-A bill with `payScheduleId` pointing at an archived (`isActive = false`) schedule is **orphaned**. Surfaced via the `isOrphaned` flag on `BillWithSchedule`. State derivation treats an orphaned bill the same as an unassigned one (schedule is null for the purposes of `MISSED_SCHEDULE` — that state requires `payScheduleId` and an *active* schedule).
+A bill with `payScheduleId` pointing at an archived (`isActive = false`) schedule is **orphaned**. Surfaced via the `isOrphaned` flag on `BillWithSchedule`. Derivation treats an orphaned bill the same as an unassigned one: `effectivePayDate` returns `null`, so `payByDate` collapses to `cycleDueDate` and the bill can never sit in `DUE_NOW` ahead of its own deadline.
 
 UI surfacing:
 - Bills page: amber `(inactive)` text after the schedule name
@@ -150,8 +159,16 @@ Schedule-level mutations (archive/restore/delete) must invalidate `billKeys.list
 
 ---
 
+## Ledger Fetch Window
+
+`listRecentInstances` returns instances whose `dueDate` falls in the **previous, current, or next** month. Next month is not optional: pay-ahead writes instances with future `dueDate`s, and every client-side derivation treats a missing instance as unpaid. A narrower window makes the client believe a settled cycle is still owed while the server, reading the full ledger, disagrees.
+
+Any change to the outlook horizon must widen this window to match.
+
+---
+
 ## Reference Implementations
 
-- **State derivation + nearest-unpaid + date-math:** [src/features/bills/bills-helpers.ts](src/features/bills/bills-helpers.ts)
-- **Tests for the pure helpers:** [src/features/bills/bills-helpers.test.ts](src/features/bills/bills-helpers.test.ts)
-- **Active schedule selection:** to be implemented as part of the dashboard build (see [docs/pages/dashboard.md](docs/pages/dashboard.md))
+- **Outlook derivation (cycles, pay-by, status, buckets):** [src/features/bills/bills-outlook.ts](src/features/bills/bills-outlook.ts) · tests in [bills-outlook.test.ts](src/features/bills/bills-outlook.test.ts)
+- **Nearest-unpaid, date-math, historical cycles, cycle validation:** [src/features/bills/bills-helpers.ts](src/features/bills/bills-helpers.ts) · tests in [bills-helpers.test.ts](src/features/bills/bills-helpers.test.ts)
+- **Shared outlook context:** [src/components/bill-outlook-provider.tsx](src/components/bill-outlook-provider.tsx) — the dashboard, banner, and drawer all read one derivation

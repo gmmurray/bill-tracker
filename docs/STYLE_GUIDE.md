@@ -66,7 +66,9 @@ Live alongside their feature module or in `src/components/` if shared across fea
 
 ## Dashboard-Specific Patterns
 
-- **Row 1 (alerts):** `bg-chill-peach border border-chill-peach-border` — collapses entirely when no overdue bills
-- **Row 2 checklist:** checked rows get `bg-chill-purple-light`, unchecked rows are plain; `MISSED_SCHEDULE` rows get `bg-amber-50 border-l-2 border-amber-400`
-- **Row 2 snapshot donut:** `chill-teal` fill on `chill-teal-light` track, shows % of this month's bills paid
-- **Row 3 table:** `chill-purple` for highlighted rows; Pay buttons use `bg-chill-mint hover:bg-chill-mint-hover`
+- **Attention banner:** `bg-chill-peach` + `border-l-chill-coral` when anything is overdue, `bg-amber-50` + `border-l-amber-500` when only due-now. Hides entirely when nothing is owed
+- **Section headers:** `Overdue` → `bg-chill-peach`; `Pay now` → `bg-amber-50`; `This month` / `Next month` → plain `bg-chill-surface`
+- **Row status accent:** a 4px left border — `border-l-chill-coral` for `OVERDUE`, `border-l-amber-500` for `DUE_NOW`, transparent otherwise. Settled rows get `bg-chill-bg/60` and struck-through names
+- **Progress bar:** `chill-teal` fill on `chill-teal-light` track, showing the share of this month's cycles settled
+- **Pay buttons:** `bg-chill-mint hover:bg-chill-mint-hover`
+- **Selected schedule tab:** `bg-chill-purple`; unselected hover `bg-chill-purple-light`

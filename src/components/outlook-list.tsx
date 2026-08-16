@@ -117,6 +117,11 @@ export function CycleRow({
   );
 }
 
+/** Does this section hold anything the user can settle today? */
+function hasActionable(cycles: BillCycle[]): boolean {
+  return cycles.some(c => c.status === 'OVERDUE' || c.status === 'DUE_NOW');
+}
+
 const bucketHeaderStyles: Record<OutlookBucket, string> = {
   OVERDUE: 'bg-chill-peach border-chill-peach-border',
   DUE_NOW: 'bg-amber-50 border-amber-200',
@@ -140,10 +145,12 @@ export function BucketSection({
   const owedCents = owed.reduce((sum, c) => sum + c.amountCents, 0);
   const fullySettled = cycles.length > 0 && owed.length === 0;
 
-  // A section with nothing left to act on folds away by default. The header
-  // keeps the count and the total on screen, so collapsing hides the rows
-  // without hiding the fact that they exist.
-  const [collapsed, setCollapsed] = React.useState(fullySettled);
+  // Sections open by default only when they hold something to act on today.
+  // `THIS_MONTH` and `NEXT_MONTH` never do — overdue and due-now cycles are
+  // routed to their own buckets, so those two only ever hold scheduled and
+  // settled rows. Their headers still carry the count and total, so folding
+  // them hides the rows without hiding that they exist.
+  const [collapsed, setCollapsed] = React.useState(!hasActionable(cycles));
 
   if (cycles.length === 0) return null;
 
@@ -244,14 +251,12 @@ export function OutlookList({
     <>
       {BUCKET_ORDER.map(bucket => {
         const bucketCycles = byBucket[bucket];
-        // Remount when a section crosses into or out of "nothing left to do",
-        // so its collapsed default is re-applied — paying the last owed bill in
-        // a section folds it away, and a new one springs it back open.
-        const fullySettled =
-          bucketCycles.length > 0 && bucketCycles.every(c => c.isPaid);
+        // Remount when a section crosses into or out of "has something to act
+        // on", so its collapsed default is re-applied — settling the last
+        // actionable row folds the section away, and a new one springs it open.
         return (
           <BucketSection
-            key={`${bucket}:${fullySettled}`}
+            key={`${bucket}:${hasActionable(bucketCycles)}`}
             bucket={bucket}
             cycles={bucketCycles}
             onPay={setPayTarget}
