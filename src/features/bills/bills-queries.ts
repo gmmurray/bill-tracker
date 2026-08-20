@@ -43,7 +43,8 @@ export const billKeys = {
   archived: () => [...billKeys.all, 'archived'] as const,
   archivedCount: () => [...billKeys.all, 'archivedCount'] as const,
   recentInstances: () => [...billKeys.all, 'recentInstances'] as const,
-  history: (page: number) => [...billKeys.all, 'history', page] as const,
+  history: (page: number, pageSize: number) =>
+    [...billKeys.all, 'history', page, pageSize] as const,
 };
 
 export function billsQueryOptions(filters: BillListFilters) {
@@ -178,7 +179,7 @@ export function useRecentInstances() {
 
 export function paymentHistoryQueryOptions(page: number, pageSize = 25) {
   return queryOptions({
-    queryKey: billKeys.history(page),
+    queryKey: billKeys.history(page, pageSize),
     queryFn: () => listPaymentHistory({ data: { page, pageSize } }),
   });
 }

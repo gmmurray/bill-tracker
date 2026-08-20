@@ -20,7 +20,7 @@ import {
   comparePaymentHistoryRows,
   derivePageSelectionState,
   groupPaymentHistoryByMonth,
-  pruneStaleSelection,
+  reconcileSelection,
   summarizeSelection,
 } from '#/features/bills/history-helpers';
 import { cn } from '#/lib/utils';
@@ -92,23 +92,27 @@ function PaymentHistoryPage() {
   const previousPageRef = React.useRef<{
     page: number;
     ids: Set<string>;
+    total: number;
   } | null>(null);
 
   const historyQuery = usePaymentHistory(page, HISTORY_PAGE_SIZE);
 
-  // Known edge (see docs/pages/history.md): deleting or editing an instance
-  // elsewhere leaves a stale copy in the selection map. When this exact page
-  // refetches (invalidation, not navigation), drop any selected id that was
-  // on it before but is gone now.
+  // Known edge (see docs/pages/history.md): editing or deleting an instance
+  // elsewhere can leave the selection map stale. When this exact page
+  // refetches (invalidation, not navigation), refresh any selected row still
+  // present and drop ones that vanished — but only treat a vanished row as
+  // deleted if the ledger actually shrank; a new payment elsewhere can just
+  // as easily push it onto the next page.
   React.useEffect(() => {
     if (!historyQuery.data) return;
-    const rows = historyQuery.data.rows;
+    const { rows, total: newTotal } = historyQuery.data;
     const newIds = new Set(rows.map(r => r.id));
     const prev = previousPageRef.current;
     if (prev && prev.page === page) {
-      setSelected(sel => pruneStaleSelection(sel, prev.ids, rows));
+      const didShrink = newTotal < prev.total;
+      setSelected(sel => reconcileSelection(sel, prev.ids, rows, didShrink));
     }
-    previousPageRef.current = { page, ids: newIds };
+    previousPageRef.current = { page, ids: newIds, total: newTotal };
   }, [historyQuery.data, page]);
 
   // Show only is scoped to a live selection — if it empties out from
@@ -117,7 +121,7 @@ function PaymentHistoryPage() {
     if (selected.size === 0) setShowOnly(false);
   }, [selected.size]);
 
-  if (historyQuery.isError || !historyQuery.data) {
+  if (historyQuery.isError) {
     return (
       <div className="px-6 py-8 max-w-5xl mx-auto">
         <div className="py-20 text-center text-sm text-red-500">
@@ -126,6 +130,8 @@ function PaymentHistoryPage() {
       </div>
     );
   }
+
+  if (!historyQuery.data) return null;
 
   const { rows, total } = historyQuery.data;
   const totalPages = Math.max(1, Math.ceil(total / HISTORY_PAGE_SIZE));

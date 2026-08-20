@@ -56,7 +56,7 @@ Primary surfaces:
 - **Dashboard** (`/dashboard`) — daily action view ([docs/pages/dashboard.md](docs/pages/dashboard.md))
 - **Bills** (`/bills`) — bill management CRUD
 - **Schedules** (`/schedules`) — pay schedule management ([docs/pages/schedules.md](docs/pages/schedules.md))
-- **History** (`/history`) — chronological payment ledger ([docs/pages/history.md](docs/pages/history.md)) — *spec'd, not built*
+- **History** (`/history`) — chronological payment ledger ([docs/pages/history.md](docs/pages/history.md))
 - **Bill Actions drawer** — global, app-wide ([docs/pages/actions.md](docs/pages/actions.md))
 
 Each surface owns one axis: dashboard is by cycle, bills is by blueprint, history is by time.

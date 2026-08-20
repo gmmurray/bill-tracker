@@ -469,6 +469,7 @@ export const listPaymentHistory = createServerFn({ method: 'GET' })
       db
         .select({ total: sql<number>`cast(count(*) as integer)` })
         .from(billInstances)
+        .innerJoin(bills, eq(billInstances.billId, bills.id))
         .where(eq(billInstances.userId, userId)),
     ]);
 

@@ -107,25 +107,58 @@ export function derivePageSelectionState(
 }
 
 /**
- * Drops selected rows that used to be on this page but disappeared from the
- * refetch — the signal that they were deleted or otherwise changed elsewhere
- * (bill detail). Only checks the current page, so it can't catch every stale
- * entry, but it covers editing something you just selected. Returns the same
- * Map instance when nothing changed, so callers can skip a re-render.
+ * Reconciles the selection against a freshly (re)fetched page.
+ *
+ * Refresh: a selected row present in `currentPageRows` is replaced with its
+ * fresh copy whenever `amountActual`, `paidAt`, `dueDate`, or `billName`
+ * differs — so editing a selected payment on bill detail updates the
+ * selection total instead of leaving it stale. Compared by field, not
+ * reference, since a refetch always yields new row objects.
+ *
+ * Delete: a selected id that was on `previousPageIds` but is missing from
+ * `currentPageRows` is only removed when `didShrink` is true (the ledger's
+ * total row count actually dropped). Absence alone isn't evidence of
+ * deletion — recording a new payment elsewhere can push this page's last row
+ * onto the next page, and dropping a still-valid selection is worse than
+ * keeping a stale one: the total goes wrong with no signal that it happened.
+ *
+ * Known residue: deleting one row and adding another within the same
+ * interval leaves the total row count unchanged, so `didShrink` stays false
+ * and the deleted row survives as a stale entry. Accepted — `Clear` fixes it.
+ *
+ * Returns the same Map instance when nothing changed, so callers can skip a
+ * re-render.
  */
-export function pruneStaleSelection(
+export function reconcileSelection(
   selected: Map<string, PaymentHistoryRow>,
   previousPageIds: ReadonlySet<string>,
   currentPageRows: PaymentHistoryRow[],
+  didShrink: boolean,
 ): Map<string, PaymentHistoryRow> {
-  const currentIds = new Set(currentPageRows.map(r => r.id));
-  const staleIds = [...previousPageIds].filter(
-    id => selected.has(id) && !currentIds.has(id),
+  const currentById = new Map(currentPageRows.map(r => [r.id, r]));
+  let next: Map<string, PaymentHistoryRow> | null = null;
+
+  for (const [id, staleRow] of selected) {
+    const freshRow = currentById.get(id);
+    if (freshRow) {
+      if (rowChanged(staleRow, freshRow)) {
+        if (!next) next = new Map(selected);
+        next.set(id, freshRow);
+      }
+    } else if (didShrink && previousPageIds.has(id)) {
+      if (!next) next = new Map(selected);
+      next.delete(id);
+    }
+  }
+
+  return next ?? selected;
+}
+
+function rowChanged(a: PaymentHistoryRow, b: PaymentHistoryRow): boolean {
+  return (
+    a.amountActual !== b.amountActual ||
+    a.paidAt !== b.paidAt ||
+    a.dueDate !== b.dueDate ||
+    a.billName !== b.billName
   );
-
-  if (staleIds.length === 0) return selected;
-
-  const next = new Map(selected);
-  for (const id of staleIds) next.delete(id);
-  return next;
 }

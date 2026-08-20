@@ -55,6 +55,12 @@ export function Button({ variant = 'default', className, ...props }: Props) {
 }
 ```
 
+### Hit areas
+
+Small controls expand their clickable region with a transparent pseudo-element rather than growing visually — see `checkbox.tsx`, where `after:-inset-3` turns a 16px box into a ~40px target. A 16px control is well under the ~44px touch guidance, and the app is used on a phone.
+
+When placing one, leave at least 12px of clearance from adjacent interactive elements so the invisible overhang doesn't swallow neighbouring taps.
+
 ### Feature Components
 
 Live alongside their feature module or in `src/components/` if shared across features. No deeply nested component folders — flat is fine within a feature directory.

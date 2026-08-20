@@ -5,7 +5,7 @@ import {
   comparePaymentHistoryRows,
   derivePageSelectionState,
   groupPaymentHistoryByMonth,
-  pruneStaleSelection,
+  reconcileSelection,
   summarizeSelection,
 } from '#/features/bills/history-helpers';
 
@@ -233,11 +233,44 @@ describe('derivePageSelectionState', () => {
 });
 
 // ---------------------------------------------------------------------------
-// pruneStaleSelection
+// reconcileSelection
 // ---------------------------------------------------------------------------
 
-describe('pruneStaleSelection', () => {
-  it('drops a selected id that vanished from the refetched page', () => {
+describe('reconcileSelection', () => {
+  it('refreshes a selected row whose amountActual changed', () => {
+    const staleRow = makeRow({ id: 'a', amountActual: 1_000 });
+    const freshRow = makeRow({ id: 'a', amountActual: 2_500 });
+    const selected = new Map([['a', staleRow]]);
+
+    const result = reconcileSelection(
+      selected,
+      new Set(['a']),
+      [freshRow],
+      false,
+    );
+    expect(result.get('a')).toBe(freshRow);
+  });
+
+  it('does not drop a selected row that merely shifted off the page (didShrink: false)', () => {
+    const rowA = makeRow({ id: 'a' });
+    const rowB = makeRow({ id: 'b' });
+    const selected = new Map([
+      ['a', rowA],
+      ['b', rowB],
+    ]);
+    const previousPageIds = new Set(['a', 'b']);
+    const currentPageRows = [rowA]; // b pushed onto the next page, not deleted
+
+    const result = reconcileSelection(
+      selected,
+      previousPageIds,
+      currentPageRows,
+      false,
+    );
+    expect([...result.keys()].sort()).toEqual(['a', 'b']);
+  });
+
+  it('drops a selected row when it vanished and didShrink is true', () => {
     const rowA = makeRow({ id: 'a' });
     const rowB = makeRow({ id: 'b' });
     const selected = new Map([
@@ -247,10 +280,11 @@ describe('pruneStaleSelection', () => {
     const previousPageIds = new Set(['a', 'b']);
     const currentPageRows = [rowA]; // b was deleted elsewhere
 
-    const result = pruneStaleSelection(
+    const result = reconcileSelection(
       selected,
       previousPageIds,
       currentPageRows,
+      true,
     );
     expect([...result.keys()]).toEqual(['a']);
   });
@@ -265,18 +299,19 @@ describe('pruneStaleSelection', () => {
     const previousPageIds = new Set(['a']);
     const currentPageRows = [rowA];
 
-    const result = pruneStaleSelection(
+    const result = reconcileSelection(
       selected,
       previousPageIds,
       currentPageRows,
+      true,
     );
     expect([...result.keys()].sort()).toEqual(['a', 'other-page-row']);
   });
 
-  it('returns the same Map instance when nothing is stale', () => {
+  it('returns the same Map instance when nothing changed', () => {
     const rowA = makeRow({ id: 'a' });
     const selected = new Map([['a', rowA]]);
-    const result = pruneStaleSelection(selected, new Set(['a']), [rowA]);
+    const result = reconcileSelection(selected, new Set(['a']), [rowA], false);
     expect(result).toBe(selected);
   });
 });
