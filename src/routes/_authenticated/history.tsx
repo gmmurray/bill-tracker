@@ -245,6 +245,7 @@ function PaymentHistoryPage() {
                         row={row}
                         checked={selected.has(row.id)}
                         onToggle={checked => toggleRow(row, checked)}
+                        fromPage={page}
                       />
                     ))}
                   </React.Fragment>
@@ -264,6 +265,7 @@ function PaymentHistoryPage() {
                       row={row}
                       checked={selected.has(row.id)}
                       onToggle={checked => toggleRow(row, checked)}
+                      fromPage={page}
                     />
                   ))}
                 </React.Fragment>
@@ -340,10 +342,12 @@ function HistoryTableRow({
   row,
   checked,
   onToggle,
+  fromPage,
 }: {
   row: PaymentHistoryRow;
   checked: boolean;
   onToggle: (checked: boolean) => void;
+  fromPage: number;
 }) {
   return (
     <tr className="border-b border-chill-border last:border-0">
@@ -361,7 +365,7 @@ function HistoryTableRow({
         <Link
           to="/bills/$billId"
           params={{ billId: row.billId }}
-          search={{ edit: false, page: 1 }}
+          search={{ edit: false, page: 1, from: 'history', fromPage }}
           className="font-medium text-chill-text hover:underline"
         >
           {row.billName}
@@ -383,10 +387,12 @@ function HistoryMobileCard({
   row,
   checked,
   onToggle,
+  fromPage,
 }: {
   row: PaymentHistoryRow;
   checked: boolean;
   onToggle: (checked: boolean) => void;
+  fromPage: number;
 }) {
   return (
     <li className="px-4 py-4 flex items-start gap-3">
@@ -401,8 +407,11 @@ function HistoryMobileCard({
           <Link
             to="/bills/$billId"
             params={{ billId: row.billId }}
-            search={{ edit: false, page: 1 }}
-            className="font-medium text-chill-text hover:underline block truncate"
+            search={{ edit: false, page: 1, from: 'history', fromPage }}
+            // inline-block, not block: a block-level link stretches to the
+            // width of the longer line beneath it, so tapping the empty space
+            // to the right of a short bill name navigates.
+            className="font-medium text-chill-text hover:underline inline-block max-w-full truncate align-top"
           >
             {row.billName}
           </Link>

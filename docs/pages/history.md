@@ -71,6 +71,10 @@ Amount takes the row-anchor treatment established on the dashboard: `text-base f
 
 Rows for **archived bills still appear** and still link to their detail page. History is history.
 
+The bill link is `inline-block max-w-full`, never `block`. A block-level link stretches to the width of the longer meta line beneath it, so tapping the empty space to the right of a short bill name navigates — invisible on a desktop hover, obvious on a phone.
+
+Bill links carry `from: 'history'` and `fromPage: page` so the detail page's back link returns to the exact page the user left. See *Returning from bill detail*.
+
 ### Selection bar
 
 Appears fixed to the bottom of the viewport whenever at least one row is selected:
@@ -205,6 +209,25 @@ Invalidate the whole `[...billKeys.all, 'history']` prefix, not one page — a n
 The loader clamps out-of-range pages by throwing `redirect` to the last real page, so a stale bookmark lands somewhere useful rather than on an empty table. `clampPage` is idempotent, so the redirect can't loop.
 
 Page size **25** — larger than the bill detail ledger's 10, since this view has no other content competing for the screen.
+
+---
+
+## Returning from bill detail
+
+`/bills/$billId` takes two optional search params that decide its back link:
+
+| Param | Values |
+|---|---|
+| `from` | `'bills'` (default) · `'history'` · `'dashboard'` |
+| `fromPage` | The origin's page number. History only. |
+
+Rendered as separate `<Link>` branches rather than a computed `to`/`search` pair — TanStack types each route's search independently, so a dynamic target loses type-checking on exactly the thing worth checking.
+
+**Why a param and not browser back.** The link names its destination, so it has to know it. `history.back()` would be right after a click-through and wrong after a deep link or refresh, and the label would be a guess either way. A search param survives reload and states the truth.
+
+`outlook-list` sets `from` by reading the current pathname rather than hardcoding it — the list renders on the dashboard *and* inside the globally-mounted drawer, which can be open on any route. Unrecognised routes send nothing and the default applies. Hardcoding `'dashboard'` there would mislabel every bill opened from the drawer elsewhere in the app.
+
+Omitting `from` is always safe: bill detail falls back to Bills, the surface that owns bill management.
 
 ---
 

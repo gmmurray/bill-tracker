@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useRouterState } from '@tanstack/react-router';
 import * as React from 'react';
 import { FiChevronDown, FiChevronRight, FiRepeat } from 'react-icons/fi';
 import { PayCycleDialog } from '#/components/pay-cycle-dialog';
@@ -53,9 +53,11 @@ const statusAccent: Record<BillCycle['status'], string> = {
 export function CycleRow({
   cycle,
   onPay,
+  from,
 }: {
   cycle: BillCycle;
   onPay: (cycle: BillCycle) => void;
+  from?: 'dashboard' | 'history';
 }) {
   return (
     <li
@@ -70,7 +72,7 @@ export function CycleRow({
           <Link
             to="/bills/$billId"
             params={{ billId: cycle.bill.id }}
-            search={{ edit: false, page: 1 }}
+            search={{ edit: false, page: 1, from }}
             className={cn(
               'text-sm font-medium truncate',
               cycle.isPaid
@@ -135,10 +137,12 @@ export function BucketSection({
   bucket,
   cycles,
   onPay,
+  from,
 }: {
   bucket: OutlookBucket;
   cycles: BillCycle[];
   onPay: (cycle: BillCycle) => void;
+  from?: 'dashboard' | 'history';
 }) {
   const owed = cycles.filter(c => !c.isPaid);
   const settledCents = cycles
@@ -207,7 +211,7 @@ export function BucketSection({
       >
         <ul id={`${headingId}-rows`} className="overflow-hidden">
           {cycles.map(cycle => (
-            <CycleRow key={cycle.key} cycle={cycle} onPay={onPay} />
+            <CycleRow key={cycle.key} cycle={cycle} onPay={onPay} from={from} />
           ))}
         </ul>
       </div>
@@ -229,6 +233,18 @@ export function OutlookList({
   emptyMessage?: string;
 }) {
   const [payTarget, setPayTarget] = React.useState<BillCycle | null>(null);
+
+  // This list renders on the dashboard and inside the globally-mounted drawer,
+  // so the origin has to be read at render time rather than hardcoded — the
+  // drawer can be open on any route. Unrecognised routes send no `from`, and
+  // bill detail falls back to its default back link.
+  const pathname = useRouterState({ select: s => s.location.pathname });
+  const from =
+    pathname === '/dashboard'
+      ? ('dashboard' as const)
+      : pathname === '/history'
+        ? ('history' as const)
+        : undefined;
 
   const byBucket = React.useMemo(() => {
     const grouped = {
@@ -262,6 +278,7 @@ export function OutlookList({
             bucket={bucket}
             cycles={bucketCycles}
             onPay={setPayTarget}
+            from={from}
           />
         );
       })}

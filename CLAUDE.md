@@ -61,6 +61,8 @@ Primary surfaces:
 
 Each surface owns one axis: dashboard is by cycle, bills is by blueprint, history is by time.
 
+Bill detail is reached from all of them, so it takes an optional `from` (and `fromPage`) search param and points its back link at wherever the user actually came from — see [docs/pages/history.md](docs/pages/history.md#returning-from-bill-detail). New links into `/bills/$billId` should pass it; omitting it falls back to Bills.
+
 ---
 
 ## Project Conventions

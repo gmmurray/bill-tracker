@@ -58,9 +58,19 @@ import {
 import { usePaySchedules } from '#/features/pay-schedules/pay-schedules-queries';
 import { cn } from '#/lib/utils';
 
+/**
+ * `from` records which surface sent the user here so the back link offers the
+ * way they actually came in. Optional — anything that omits it falls back to
+ * Bills, which is the page that owns bill management.
+ *
+ * `fromPage` preserves the origin's pagination (History only). Landing back on
+ * page 1 after browsing to page 4 is its own small betrayal.
+ */
 const searchSchema = z.object({
   edit: z.boolean().catch(false),
   page: z.number().int().positive().catch(1),
+  from: z.enum(['bills', 'history', 'dashboard']).optional().catch(undefined),
+  fromPage: z.number().int().positive().optional().catch(undefined),
 });
 
 export const Route = createFileRoute('/_authenticated/bills/$billId')({
@@ -75,6 +85,48 @@ export const Route = createFileRoute('/_authenticated/bills/$billId')({
   }),
   component: BillDetailPage,
 });
+
+const backLinkClass =
+  'text-sm text-chill-text-muted hover:text-chill-text transition-colors';
+
+/**
+ * Written as separate branches rather than a computed `to`/`search` pair —
+ * TanStack types each route's search independently, so a dynamic target
+ * loses type-checking on exactly the thing worth checking.
+ */
+function BackLink({
+  from,
+  fromPage,
+}: {
+  from?: 'bills' | 'history' | 'dashboard';
+  fromPage?: number;
+}) {
+  if (from === 'history') {
+    return (
+      <Link to="/history" search={{ page: fromPage }} className={backLinkClass}>
+        ← Back to History
+      </Link>
+    );
+  }
+
+  if (from === 'dashboard') {
+    return (
+      <Link to="/dashboard" className={backLinkClass}>
+        ← Back to Dashboard
+      </Link>
+    );
+  }
+
+  return (
+    <Link
+      to="/bills"
+      search={{ scheduleId: 'all', manualOnly: false }}
+      className={backLinkClass}
+    >
+      ← Back to Bills
+    </Link>
+  );
+}
 
 function formatDueDate(isoDate: string) {
   return new Date(`${isoDate}T12:00:00`).toLocaleDateString('en-US', {
@@ -96,7 +148,7 @@ function formatPaidAt(isoDatetime: string) {
 
 function BillDetailPage() {
   const { billId } = Route.useParams();
-  const { edit, page } = Route.useSearch();
+  const { edit, page, from, fromPage } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const archiveBillMutation = useArchiveBill();
   const [logDrawerOpen, setLogDrawerOpen] = React.useState(false);
@@ -119,13 +171,7 @@ function BillDetailPage() {
   return (
     <div className="px-6 py-8 max-w-5xl mx-auto">
       <div className="mb-6">
-        <Link
-          to="/bills"
-          search={{ scheduleId: 'all', manualOnly: false }}
-          className="text-sm text-chill-text-muted hover:text-chill-text transition-colors"
-        >
-          ← Back to Bills
-        </Link>
+        <BackLink from={from} fromPage={fromPage} />
       </div>
 
       <BlueprintSection
