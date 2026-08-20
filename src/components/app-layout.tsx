@@ -2,7 +2,13 @@ import { UserButton } from '@clerk/tanstack-react-start';
 import { Link } from '@tanstack/react-router';
 import type { PropsWithChildren, ReactNode } from 'react';
 import * as React from 'react';
-import { FiCalendar, FiFileText, FiGrid, FiMenu } from 'react-icons/fi';
+import {
+  FiCalendar,
+  FiClock,
+  FiFileText,
+  FiGrid,
+  FiMenu,
+} from 'react-icons/fi';
 
 /** Global chrome is injected by the shell, which owns the outlook context. */
 type Props = PropsWithChildren<{
@@ -110,6 +116,13 @@ function SidebarContents({ onLinkClick }: { onLinkClick?: () => void }) {
         >
           Schedules
         </NavLink>
+        <NavLink
+          to="/history"
+          icon={<FiClock size={16} aria-hidden="true" />}
+          onClick={onLinkClick}
+        >
+          History
+        </NavLink>
       </nav>
 
       <div className="pt-4 border-t border-chill-border">
@@ -125,7 +138,7 @@ function NavLink({
   onClick,
   children,
 }: {
-  to: '/dashboard' | '/bills' | '/schedules';
+  to: '/dashboard' | '/bills' | '/schedules' | '/history';
   icon: React.ReactNode;
   onClick?: () => void;
   children: React.ReactNode;

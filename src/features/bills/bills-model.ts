@@ -1,9 +1,16 @@
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 import { type billInstances, bills } from '#/db/schema';
+import type { BillCategory } from './bills-constants';
 
 export type Bill = typeof bills.$inferSelect;
 export type BillInstance = typeof billInstances.$inferSelect;
+
+export type PaymentHistoryRow = BillInstance & {
+  billName: string;
+  billCategory: BillCategory | null;
+  billIsActive: boolean;
+};
 
 export type BillWithSchedule = Bill & {
   scheduleName: string | null;
@@ -104,3 +111,10 @@ export const bulkAssignBillsSchema = z.object({
 });
 
 export type BulkAssignBillsInput = z.infer<typeof bulkAssignBillsSchema>;
+
+export const listPaymentHistorySchema = z.object({
+  page: z.number().int().positive().optional(),
+  pageSize: z.number().int().positive().optional(),
+});
+
+export type ListPaymentHistoryInput = z.infer<typeof listPaymentHistorySchema>;

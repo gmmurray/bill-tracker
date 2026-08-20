@@ -28,6 +28,7 @@ import {
   getBillDetailSchema,
   instanceIdSchema,
   listBillsSchema,
+  listPaymentHistorySchema,
   logHistoricalPaymentSchema,
   recordBillPaymentSchema,
   updateBillInstanceSchema,
@@ -429,6 +430,49 @@ export const deleteBill = createServerFn({ method: 'POST' })
     await db
       .delete(bills)
       .where(and(eq(bills.id, data.billId), eq(bills.userId, userId)));
+  });
+
+/**
+ * A chronological ledger of every payment recorded, across all bills. Scoped
+ * on `billInstances.userId` directly (not the `bills` join) and deliberately
+ * does not filter on `bills.isActive` — archiving a bill must not erase its
+ * payment history.
+ */
+export const listPaymentHistory = createServerFn({ method: 'GET' })
+  .validator(listPaymentHistorySchema)
+  .handler(async ({ data }) => {
+    const { userId } = await requireAuth({ data: {} });
+    const db = getDb();
+
+    const page = data.page ?? 1;
+    const pageSize = data.pageSize ?? 25;
+    const offset = (page - 1) * pageSize;
+
+    const [rows, countResult] = await Promise.all([
+      db
+        .select({
+          ...getTableColumns(billInstances),
+          billName: bills.name,
+          billCategory: bills.category,
+          billIsActive: bills.isActive,
+        })
+        .from(billInstances)
+        .innerJoin(bills, eq(billInstances.billId, bills.id))
+        .where(eq(billInstances.userId, userId))
+        .orderBy(
+          desc(billInstances.paidAt),
+          desc(billInstances.dueDate),
+          desc(billInstances.id),
+        )
+        .limit(pageSize)
+        .offset(offset),
+      db
+        .select({ total: sql<number>`cast(count(*) as integer)` })
+        .from(billInstances)
+        .where(eq(billInstances.userId, userId)),
+    ]);
+
+    return { rows, total: countResult[0]?.total ?? 0 };
   });
 
 export const bulkAssignBills = createServerFn({ method: 'POST' })

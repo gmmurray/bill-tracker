@@ -25,6 +25,7 @@ import {
   getArchivedBillsCount,
   getBillDetail,
   listBills,
+  listPaymentHistory,
   listRecentInstances,
   logHistoricalPayment,
   recordBillPayment,
@@ -42,6 +43,7 @@ export const billKeys = {
   archived: () => [...billKeys.all, 'archived'] as const,
   archivedCount: () => [...billKeys.all, 'archivedCount'] as const,
   recentInstances: () => [...billKeys.all, 'recentInstances'] as const,
+  history: (page: number) => [...billKeys.all, 'history', page] as const,
 };
 
 export function billsQueryOptions(filters: BillListFilters) {
@@ -174,6 +176,17 @@ export function useRecentInstances() {
   return useQuery(recentInstancesQueryOptions());
 }
 
+export function paymentHistoryQueryOptions(page: number, pageSize = 25) {
+  return queryOptions({
+    queryKey: billKeys.history(page),
+    queryFn: () => listPaymentHistory({ data: { page, pageSize } }),
+  });
+}
+
+export function usePaymentHistory(page: number, pageSize = 25) {
+  return useQuery(paymentHistoryQueryOptions(page, pageSize));
+}
+
 export function useRecordBillPayment() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -190,6 +203,9 @@ export function useRecordBillPayment() {
       });
       queryClient.invalidateQueries({
         queryKey: billKeys.recentInstances(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: [...billKeys.all, 'history'],
       });
     },
     onError: err => {
@@ -220,6 +236,9 @@ export function useUpdateBillInstance() {
       queryClient.invalidateQueries({
         queryKey: billKeys.recentInstances(),
       });
+      queryClient.invalidateQueries({
+        queryKey: [...billKeys.all, 'history'],
+      });
     },
     onError: err => {
       toast.error(getErrorMessage(err, 'Failed to update payment'));
@@ -239,6 +258,9 @@ export function useDeleteBillInstance() {
       });
       queryClient.invalidateQueries({
         queryKey: billKeys.recentInstances(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: [...billKeys.all, 'history'],
       });
     },
     onError: err => {
@@ -260,6 +282,9 @@ export function useLogHistoricalPayment() {
       });
       queryClient.invalidateQueries({
         queryKey: billKeys.recentInstances(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: [...billKeys.all, 'history'],
       });
     },
     onError: err => {
@@ -333,6 +358,9 @@ export function useDeleteBill() {
       queryClient.invalidateQueries({ queryKey: billKeys.lists() });
       queryClient.invalidateQueries({
         queryKey: billKeys.recentInstances(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: [...billKeys.all, 'history'],
       });
     },
   });
